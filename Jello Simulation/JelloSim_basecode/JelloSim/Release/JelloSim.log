@@ -1,0 +1,8 @@
+﻿Build started 4/15/2013 9:09:04 PM.
+     1>Project "C:\Users\MikeRiv\Desktop\Repos\hair-simulation\Jello Simulation\JelloSim_basecode\JelloSim\JelloSim.vcxproj" on node 3 (build target(s)).
+     1>C:\Program Files (x86)\MSBuild\Microsoft.Cpp\v4.0\Platforms\Win32\Microsoft.Cpp.Win32.Targets(511,5): error MSB8008: Specified platform toolset (v110) is not installed or invalid. Please make sure that a supported PlatformToolset value is selected.
+     1>Done Building Project "C:\Users\MikeRiv\Desktop\Repos\hair-simulation\Jello Simulation\JelloSim_basecode\JelloSim\JelloSim.vcxproj" (build target(s)) -- FAILED.
+
+Build FAILED.
+
+Time Elapsed 00:00:00.01
