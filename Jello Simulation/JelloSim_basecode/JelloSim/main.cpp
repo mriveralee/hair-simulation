@@ -7,10 +7,12 @@
 #include <IL/ilu.h>
 #include <IL/ilut.h>
 
-#include "jelloMesh.h"
+#include "JelloMesh.h"
+#include "HairMesh.h"
 #include "world.h"
 
 JelloMesh theJello;
+HairMesh theHair;
 Camera theCamera;
 //World theWorld("worlds/ground.xml");				//Given Ground Scene
 //World theWorld("worlds/cylinders.xml");			//Given cylinder scene
@@ -33,9 +35,9 @@ bool isRecording = false;
 
 void initCamera()
 {
-   double w = theJello.GetWidth()*2;   
-   double h = theJello.GetHeight()*2;   
-   double d = theJello.GetDepth()*2;   
+   double w = theHair.GetWidth()*2;   
+   double h = theHair.GetHeight()*2;   
+   double d = theHair.GetDepth()*2;   
    double angle = 0.5*theCamera.dfltVfov*M_PI/180.0;
    double dist;
    if (w > h) dist = w*0.5/tan(angle);  // aspect is 1, so i can do this
@@ -144,29 +146,29 @@ void onKeyboardCb(unsigned char key, int x, int y)
 
    if (key == ' ') theCamera.reset();
    else if (key == 27) exit(0); // ESC Key
-   else if (key == '8') theJello.SetIntegrationType(JelloMesh::EULER);
-   else if (key == '9') theJello.SetIntegrationType(JelloMesh::MIDPOINT);
-   else if (key == '0') theJello.SetIntegrationType(JelloMesh::RK4);
+   else if (key == '8') theHair.SetIntegrationType(HairMesh::EULER);
+   else if (key == '9') theHair.SetIntegrationType(HairMesh::MIDPOINT);
+   else if (key == '0') theHair.SetIntegrationType(HairMesh::RK4);
    else if (key == '>') isRunning = true;
    else if (key == '=') isRunning = false;
-   else if (key == '<') theJello.Reset();
+   else if (key == '<') theHair.Reset();
    else if (key == 'r') isRecording = !isRecording; if (isRecording) theFrameNum = 0;
-   else if (key == '1') mask = theJello.MESH;
-   else if (key == '2') mask = theJello.FORCES;
-   else if (key == '3') mask = theJello.NORMALS;
-   else if (key == '4') mask = theJello.STRUCTURAL;
-   else if (key == '5') mask = theJello.SHEAR;
-   else if (key == '6') mask = theJello.BEND;
+   else if (key == '1') mask = theHair.MESH;
+   else if (key == '2') mask = theHair.FORCES;
+   else if (key == '3') mask = theHair.NORMALS;
+   else if (key == '4') mask = theHair.STRUCTURAL;
+   else if (key == '5') mask = theHair.SHEAR;
+   else if (key == '6') mask = theHair.BEND;
 
    if (mask)
    {
-       if (theJello.GetDrawFlags() & mask)
+       if (theHair.GetDrawFlags() & mask)
        {
-           theJello.SetDrawFlags(theJello.GetDrawFlags() & ~mask);
+           theHair.SetDrawFlags(theHair.GetDrawFlags() & ~mask);
        }
        else
        {
-           theJello.SetDrawFlags(theJello.GetDrawFlags() | mask);
+           theHair.SetDrawFlags(theHair.GetDrawFlags() | mask);
        }
    }
 
@@ -191,7 +193,7 @@ void onTimerCb(int value)
    glutTimerFunc(100, onTimerCb, 0);
    if (isRunning) 
    {
-       theJello.Update(0.01, theWorld); 
+       theHair.Update(0.01, theWorld); 
        if (isRecording) grabScreen();
    }
 
@@ -225,11 +227,11 @@ void drawOverlay()
      glRasterPos2f(0.01, 0.01);
      
      char* intstr;
-     switch (theJello.GetIntegrationType())
+     switch (theHair.GetIntegrationType())
      {
-     case JelloMesh::EULER: intstr = "Euler"; break;
-     case JelloMesh::MIDPOINT: intstr = "Midpoint"; break;
-     case JelloMesh::RK4: intstr = "RK4"; break;
+     case HairMesh::EULER: intstr = "Euler"; break;
+     case HairMesh::MIDPOINT: intstr = "Midpoint"; break;
+     case HairMesh::RK4: intstr = "RK4"; break;
      }
 
      char info[1024];
@@ -282,7 +284,7 @@ void onDrawCb()
     glLightfv(GL_LIGHT0, GL_POSITION, pos);
 
     theWorld.Draw();
-    theJello.Draw(cpos);
+    theHair.Draw(cpos);
     drawOverlay();
     glutSwapBuffers();
 }

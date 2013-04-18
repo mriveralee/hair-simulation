@@ -71,6 +71,8 @@
     <ClInclude Include="camera.h" />
     <ClInclude Include="clock.h" />
     <ClInclude Include="fps.h" />
+    <ClInclude Include="HairMesh.h" />
+    <ClInclude Include="HairStrand.h" />
     <ClInclude Include="jelloMesh.h" />
     <ClInclude Include="matrix.h" />
     <ClInclude Include="timer.h" />
@@ -80,6 +82,8 @@
   <ItemGroup>
     <ClCompile Include="camera.cpp" />
     <ClCompile Include="fps.cpp" />
+    <ClCompile Include="HandMesh.cpp" />
+    <ClCompile Include="HandStrand.cpp" />
     <ClCompile Include="jelloMesh.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="vec.cpp" />
