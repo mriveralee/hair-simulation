@@ -39,9 +39,6 @@
     <ClInclude Include="world.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="HairStrand.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="HairMesh.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -65,10 +62,7 @@
     <ClCompile Include="world.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="HandStrand.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="HandMesh.cpp">
+    <ClCompile Include="HairMesh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

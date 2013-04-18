@@ -201,6 +201,24 @@ protected:
         IntersectionType m_type;
 		double m_ground_friction;
     };
+
+
+	class HairStrand
+	{
+		public:
+			HairStrand();
+			HairStrand(const HairStrand& h);
+			HairStrand& operator=(const HairStrand& h);
+			HairStrand(int idx, const vec3& pos, const vec3& vel = vec3(0,0,0), double m = 1);
+
+			int index;
+			vec3 position;
+			vec3 velocity;
+			vec3 force;
+			double mass;
+			static HairStrand EMPTY;
+	};
+
 };
 
 #endif
