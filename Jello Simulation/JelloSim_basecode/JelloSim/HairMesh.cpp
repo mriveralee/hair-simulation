@@ -1309,40 +1309,131 @@ bool HairMesh::FaceMesh::compare(const FaceMesh& one, const FaceMesh& other)
     return one.distToEye > other.distToEye;
 }
 
+//---------------------------------------------------------------------
+//-------------------------- HairStrandList ---------------------------
+//---------------------------------------------------------------------
+
+//#######################################################
+//############# HairStrandList Constructor  #############
+//#######################################################
+HairMesh::HairStrandList::HairStrandList() {
+	strands = std::vector<HairStrand>();
+}
+
+
+//############################################################
+//############# HairStrandList Copy Constructor  #############
+//############################################################
+HairMesh::HairStrandList::HairStrandList(const HairStrandList& h) {
+	strands = h.strands;
+}
+
+//#######################################################
+//####### HairStrandList Assignment Constructor #########
+//#######################################################
+HairMesh::HairStrandList& HairMesh::HairStrandList::operator=(const HairStrandList& h) {
+    if (&h == this) return *this;
+
+    strands = h.strands;
+    return *this;
+}
 
 
 //---------------------------------------------------------------------
-// HairStrand
+//---------------------------- HairStrand -----------------------------
 //---------------------------------------------------------------------
-
 HairMesh::HairStrand HairMesh::HairStrand::EMPTY;
 
-HairMesh::HairStrand::HairStrand(int idx, const vec3& p, const vec3& v, double m)
+
+//#######################################################
+//############# HairStrand Constructor #1 ###############
+//#######################################################
+HairMesh::HairStrand::HairStrand(int idx, const vec3& p)
 {
     index = idx;
-    position = p;
-    velocity = v;
-    force = vec3(0,0,0);
-    mass = m;
+	position = p;
 }
 
-HairMesh::HairStrand::HairStrand() : index(-1), position(0,0,0), velocity(0,0,0), force(0,0,0), mass(1.0)
+
+//#######################################################
+//############# HairStrand Constructor #2 ###############
+//#######################################################
+HairMesh::HairStrand::HairStrand() : index(-1), position(0,0,0)
 {
 }
 
+
+//#######################################################
+//########## HairStrand Equality Constructor ############
+//#######################################################
 HairMesh::HairStrand::HairStrand(const HairMesh::HairStrand& h) : 
-    index(h.index), position(h.position), velocity(h.velocity), force(h.force), mass(h.mass)
+    index(h.index), position(h.position)
 {
 }
 
+//#######################################################
+//############## HairStrand Copy Constructor ############
+//#######################################################
 HairMesh::HairStrand& HairMesh::HairStrand::operator=(const HairMesh::HairStrand& h)
 {
     if (&h == this) return *this;
 
     index = h.index;
     position = h.position;
-    velocity = h.velocity;
-    force = h.force;
-    mass = h.mass;
     return *this;
+}
+
+
+//#######################################################
+//############### Initialize HairStrand #################
+//#######################################################
+void HairMesh::HairStrand::InitStrand()
+{
+    strandSprings.clear();
+    /*
+    if (m_width < 0.01 || m_height < 0.01 || m_depth < 0.01) return;
+    if (m_cols < 1 || m_rows < 1 || m_stacks < 1) return;
+
+    // Init particles
+    float wcellsize = m_width / m_cols;
+    float hcellsize = m_height / m_rows;
+    float dcellsize = m_depth / m_stacks;
+    
+    for (int i = 0; i < m_rows+1; i++)
+    {
+        for (int j = 0; j < m_cols+1; j++)
+        {
+            for (int k = 0; k < m_stacks+1; k++)
+            {
+                float x = -m_width*0.5f + wcellsize*i;
+                float y = 0.5 + hcellsize*j+jelloStartY;  /// Starting Height of cube
+                float z = -m_depth*0.5f + dcellsize*k;
+                m_vparticles[i][j][k] = Particle(GetIndex(i,j,k), vec3(x, y, z));
+            }
+        }
+    }
+    */
+    // Setup structural springs
+    ParticleList& list = strandParticles;
+   /* for (int i = 0; i < m_rows+1; i++)
+    {
+        for (int j = 0; j < m_cols+1; j++)
+        {
+            for (int k = 0; k < m_stacks+1; k++)
+            {
+                // THIS IS WHERE YOU WOULD ADD SPRINGS (see InitHairMesh)
+
+            }
+        }
+    }*/
+
+    // Init mesh geometry
+   /* m_mesh.clear();
+    m_mesh.push_back(FaceMesh(*this,XLEFT));
+    m_mesh.push_back(FaceMesh(*this,XRIGHT));
+    m_mesh.push_back(FaceMesh(*this,YTOP));
+    m_mesh.push_back(FaceMesh(*this,YBOTTOM));
+    m_mesh.push_back(FaceMesh(*this,ZFRONT));
+    m_mesh.push_back(FaceMesh(*this,ZBACK));
+    */
 }

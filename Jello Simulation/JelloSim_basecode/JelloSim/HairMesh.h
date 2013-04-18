@@ -202,23 +202,69 @@ protected:
 		double m_ground_friction;
     };
 
-
+//##################################################
+//##############  HAIR STRANDS YO ##################
+//##################################################
+protected:
+	//##############################
+	//### Hair Strand Definition ###
+	//##############################
 	class HairStrand
 	{
+		typedef std::vector<Particle> ParticleList;
+		Particle& GetParticle(ParticleList& list, int i);
+		const Particle& GetParticle(const ParticleList& list, int i) const;
 		public:
 			HairStrand();
 			HairStrand(const HairStrand& h);
 			HairStrand& operator=(const HairStrand& h);
-			HairStrand(int idx, const vec3& pos, const vec3& vel = vec3(0,0,0), double m = 1);
+			HairStrand(int idx, const vec3& pos);
+
+			std::vector<Spring> strandSprings;
+            std::vector<Intersection> strandContacts;
+            std::vector<Intersection> strandCollisions;
+
+
+            virtual void InitStrand();
 
 			int index;
-			vec3 position;
-			vec3 velocity;
-			vec3 force;
-			double mass;
+
+			//Particles in the Strand
+			Particle rootParticle;  //TODO: Subclass root and make it's position/velocity always 0
+			vec3 position;			//TODO: defines location of rootParticle (root of hair)
+			
+			
+			ParticleList strandParticles;
+
+
 			static HairStrand EMPTY;
 	};
 
+
+
+
+	//###################################
+	//### Hair Strand List Definition ###
+	//###################################
+	class HairStrandList {
+		public:
+			std::vector<HairStrand> strands;
+			HairStrandList();
+			HairStrandList(const HairStrandList& p);
+			HairStrandList& operator=(const HairStrandList& p);
+	};
+	
+	//###################################
+	//### Hair Strand List Definition ###
+	//###################################
+	///List of Particles for a hairStrand
+	
+	//###############################
+	//######## MESH VARS ############
+	//#################################
+	HairStrandList StrandList; //Var  that holds all of the strands for the Mesh
+	
+	//TODO: ADD vars for inter-strand collisions (strand 1 hits strand 2)
 };
 
 #endif
