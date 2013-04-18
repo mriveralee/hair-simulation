@@ -253,12 +253,7 @@ protected:
 			HairStrandList(const HairStrandList& p);
 			HairStrandList& operator=(const HairStrandList& p);
 	};
-	
-	//###################################
-	//### Hair Strand List Definition ###
-	//###################################
-	///List of Particles for a hairStrand
-	
+		
 	//###############################
 	//######## MESH VARS ############
 	//#################################
