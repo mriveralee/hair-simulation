@@ -1352,6 +1352,7 @@ HairMesh::HairStrand::HairStrand(int idx, const vec3& p)
 {
     index = idx;
 	position = p;
+	InitStrand();
 }
 
 
@@ -1393,39 +1394,27 @@ void HairMesh::HairStrand::InitStrand()
     /*
     if (m_width < 0.01 || m_height < 0.01 || m_depth < 0.01) return;
     if (m_cols < 1 || m_rows < 1 || m_stacks < 1) return;
+	*/
 
     // Init particles
-    float wcellsize = m_width / m_cols;
-    float hcellsize = m_height / m_rows;
-    float dcellsize = m_depth / m_stacks;
-    
-    for (int i = 0; i < m_rows+1; i++)
-    {
-        for (int j = 0; j < m_cols+1; j++)
-        {
-            for (int k = 0; k < m_stacks+1; k++)
-            {
-                float x = -m_width*0.5f + wcellsize*i;
-                float y = 0.5 + hcellsize*j+jelloStartY;  /// Starting Height of cube
-                float z = -m_depth*0.5f + dcellsize*k;
-                m_vparticles[i][j][k] = Particle(GetIndex(i,j,k), vec3(x, y, z));
-            }
-        }
-    }
-    */
+	float strandLength = 1.0f;
+	int numParticles = 6;
+	float particleDistOffset = strandLength / numParticles;
+
+	strandParticles.resize(numParticles);
+	for (int i = 0; i < numParticles; i++) {
+		float x = position[0]; // root position instance variable
+		float y = position[1] - i * particleDistOffset; // starting height of strand for now
+		float z = position[2];
+		strandParticles[i] = Particle(i, vec3(x,y,z));
+	}
+
     // Setup structural springs
     ParticleList& list = strandParticles;
-   /* for (int i = 0; i < m_rows+1; i++)
-    {
-        for (int j = 0; j < m_cols+1; j++)
-        {
-            for (int k = 0; k < m_stacks+1; k++)
-            {
-                // THIS IS WHERE YOU WOULD ADD SPRINGS (see InitHairMesh)
-
-            }
-        }
-    }*/
+	for (int i = 0; i < numParticles; i++) {
+		// TODO: ADD SPRINGS (see InitHairMesh)
+		//cout << list[i].position << endl;
+    }
 
     // Init mesh geometry
    /* m_mesh.clear();
