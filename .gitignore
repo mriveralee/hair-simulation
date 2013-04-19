@@ -12,8 +12,8 @@
 *.la
 *.a
 *.opensdf
-/*.sdf
-Debug/
-/ipch/
-/Release/
-/Debug_STL/
+*/*.sdf
+*/Debug/
+*/ipch/
+*/Release/
+*/Debug_STL/
