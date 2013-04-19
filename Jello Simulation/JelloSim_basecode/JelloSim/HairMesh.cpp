@@ -1242,7 +1242,7 @@ HairMesh::GhostParticle::GhostParticle(const HairMesh::GhostParticle& p)
 	force = p.force;
 }
 
-HairMesh::Particle& HairMesh::Particle::operator=(const HairMesh::Particle& p)
+HairMesh::GhostParticle& HairMesh::GhostParticle::operator=(const HairMesh::GhostParticle& p)
 {
     if (&p == this) return *this;
 
@@ -1411,7 +1411,7 @@ void HairMesh::DrawHairParticles() {
 	glPointSize(6.0);
 	glEnable(GL_POINT_SMOOTH);
     glBegin(GL_POINTS);
-    glColor3f(0.0, 0.0, 0.0);
+   
 
     HairStrandList& strandList = this->StrandList;
     for (unsigned int i = 0; i < strandList.size(); i++) {
@@ -1425,6 +1425,9 @@ void HairMesh::DrawHairParticles() {
 			//Current Particle in a strand
 			const Particle p0 = hairParticles[k];
 
+			// GHOST PARTICLES ARE ODD INDICES, HAIR PARTICLES ARE EVEN
+			if (k % 2 == 0) glColor3f(0.0, 0.0, 0.0);
+			else glColor3f(0.5, 0.0, 0.0);
 			//Create vertices for each particle to draw a line between them
 			glVertex3f(p0.position[0], p0.position[1], p0.position[2]);
 		}
@@ -1542,20 +1545,38 @@ void HairMesh::HairStrand::InitStrand()
 	strandParticles = ParticleList();
     // Init particles
 	float strandLength = 1.0f;
-	int numParticles = 6;
-	float particleDistOffset = strandLength / numParticles;
+	int numHairParticles = 8;
+	int numGhostParticles = numHairParticles - 1;
+	int numTotalParticles = numHairParticles + numGhostParticles;
+	float particleDistOffset = strandLength / numHairParticles;
 
-	strandParticles.resize(numParticles);
-	for (int i = 0; i < numParticles; i++) {
-		float x = position[0]; // root position instance variable
-		float y = position[1] - i * particleDistOffset; // starting height of strand for now
-		float z = position[2];
-		strandParticles[i] = Particle(i, vec3(x,y,z));
+	strandParticles.resize(numTotalParticles);
+	
+	// start with 1 single hair particle
+	float x = position[0]; // root position instance variable
+	float y = position[1]; // starting height of strand for now
+	float z = position[2];
+	strandParticles[0] = Particle(0, vec3(x,y,z));
+
+	// GHOST PARTICLES HAVE ODD INDICES, HAIR PARTICLES HAVE EVEN
+	for (int i = 1; i < numTotalParticles; i++) {
+		if (i % 2 == 1) {
+			float xG = position[0] + 0.3;
+			float yG = position[1] - i * particleDistOffset - 0.5 * particleDistOffset;
+			float zG = position[2];
+			strandParticles[i] = GhostParticle(i, vec3(xG,yG,zG));
+		} else {
+			float xH = position[0];
+			float yH = position[1] - i * particleDistOffset;
+			float zH = position[2];
+			strandParticles[i] = Particle(i, vec3(xH,yH,zH));
+		}
+
 	}
 
     // Setup structural springs
     ParticleList& list = strandParticles;
-	for (int i = 0; i < numParticles; i++) {
+	for (int i = 0; i < numTotalParticles; i++) {
 		// TODO: ADD SPRINGS (see InitHairMesh)
 		//cout << list[i].position << endl;
     }
