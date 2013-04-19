@@ -1351,7 +1351,7 @@ void HairMesh::InitHairMesh()
 	this->StrandList = HairStrandList();
 	
 	//Make a strand
-	HairStrand h = HairStrand(vec3(0, 2, 0));
+	HairStrand h = HairStrand(vec3(0, 1, 0));
 	//Add to our strandList
 	StrandList.addStrand(h);
 
@@ -1551,13 +1551,13 @@ void HairMesh::HairStrand::InitStrand()
 	// GHOST PARTICLES HAVE ODD INDICES, HAIR PARTICLES HAVE EVEN
 	for (int i = 1; i < numTotalParticles; i++) {
 		if (i % 2 == 1) {
-			float xG = position[0] + 0.3;
-			float yG = position[1] - i * particleDistOffset;
+			float xG = position[0] - i * particleDistOffset;
+			float yG = position[1] + 0.3;
 			float zG = position[2];
 			strandParticles[i] = GhostParticle(i, vec3(xG,yG,zG));
 		} else {
-			float xH = position[0];
-			float yH = position[1] - i * particleDistOffset;
+			float xH = position[0] - i * particleDistOffset;
+			float yH = position[1];
 			float zH = position[2];
 			strandParticles[i] = Particle(i, vec3(xH,yH,zH));
 		}
