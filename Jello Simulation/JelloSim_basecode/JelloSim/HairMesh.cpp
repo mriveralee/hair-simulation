@@ -329,7 +329,17 @@ void HairMesh::Draw(const vec3& eyePos)
 void HairMesh::Update(double dt, const World& world, const vec3& externalForces)
 {
     m_externalForces = externalForces;
-
+	ComputeHairForces(dt);
+	updateVelocity(dt);
+	applyStrainLimiting(dt);			// v_n+dt/2
+	applySelfRepulsions(dt);			// v_n+dt/2
+	updatePosition(dt);				// x_n+1 = x_n + (dt/2)
+	resolveBodyCollisions(dt);			// modify  x_n+1 and v_n
+	resolveSelfCollisions(dt);			// modify  x_n+1 and v_n
+	updateVelocity(dt);					// v_n+1/2 = v_n + dt/2a(tn+1/2, x_n, v_n+1/2)
+	extrapolateVelocity(dt);			// v_n+1 = 2v_n+1/2 - v_n
+	applySelfRepulsions(dt);			// Modify v_n+1 Use n+1
+	
 //	CheckForCollisions(m_vparticles, world);
 //	ComputeForces(m_vparticles);
 //	ResolveContacts(m_vparticles);
@@ -1355,9 +1365,6 @@ void HairMesh::InitHairMesh()
 	//Add to our strandList
 	StrandList.addStrand(h);
 
-
-
-
 }
 
 //##########################################################
@@ -1428,6 +1435,99 @@ void HairMesh::DrawHairParticles() {
 
 
 }
+//--------------------------------------------------------------------
+//------------------------Time Integration for Hair ------------------
+//--------------------------------------------------------------------
+void HairMesh::applyStrainLimiting(double dt) {
+
+}
+
+void HairMesh::applySelfRepulsions(double dt) {
+
+}
+
+void HairMesh::updatePosition(double dt) {
+	for (unsigned int i = 0; i < StrandList.size(); i++) {
+		//Current Strand
+		HairStrand& strand = StrandList.getStrand(i);
+		//Strand Particles
+		ParticleList& particles = strand.strandParticles;
+		//Loop through and apple forces
+		for (unsigned int j = 0; j < particles.size(); j++) {
+			Particle& p = particles[j];
+			p.position += (dt)*p.velocity;
+		}
+	}
+
+}
+void HairMesh::resolveBodyCollisions(double dt) {
+
+}
+
+void HairMesh::resolveSelfCollisions(double dt) {
+
+}
+void HairMesh::updateVelocity(double dt) {
+	for (unsigned int i = 0; i < StrandList.size(); i++) {
+		//Current Strand
+		HairStrand& strand = StrandList.getStrand(i);
+		//Strand Particles
+		ParticleList& particles = strand.strandParticles;
+		//Loop through and apple forces
+		for (unsigned int j = 0; j < particles.size(); j++) {
+			Particle& p = particles[j];
+			p.velocity += (dt/2)*p.mass*p.force; // TODO what actually belongs from the paper
+			cout<< p.velocity << endl;
+		}
+	}
+
+}
+
+void HairMesh::extrapolateVelocity(double dt) { 
+
+}
+
+//Add Gravity and that good stuff to the particles
+void HairMesh::ComputeHairForces(double dt) {
+	for (unsigned int i = 0; i < StrandList.size(); i++) {
+		//Current Strand
+		HairStrand& strand = StrandList.getStrand(i);
+		//Strand Particles
+		ParticleList& particles = strand.strandParticles;
+		//Loop through and apple forces
+		for (unsigned int j = 0; j < particles.size(); j++) {
+			Particle& p = particles[j];
+			p.force = m_externalForces * p.mass; // TODO what actually belongs from the paper
+			cout << p.force << endl;
+		}
+	}
+	
+   // Update springs
+  //  for(unsigned int i = 0; i < m_vsprings.size(); i++)
+  //  {
+  //      Spring& spring = m_vsprings[i];
+  //      Particle& a = GetParticle(grid, spring.m_p1);
+  //      Particle& b = GetParticle(grid, spring.m_p2);
+		//
+		////Spring Variables
+		//double Ks = spring.m_Ks;				 //Hook's Spring Constant
+		//double Kd = spring.m_Kd;				 //Damping Constant
+		//double R = spring.m_restLen;			 //Rest Length of Spring
+		//vec3 L = a.position - b.position;			 //Vector from B to A (position)
+		//vec3 normL = L/L.Length();				 //Normalized L vector
+		//vec3 diffVelocity = a.velocity - b.velocity;	 //Vector Velocities
+		//double length = L.Length()-R;
+		////Stiffness Spring Force:	-Ks(|L|-R)*L/(|L|);
+		////Damping Force:			-kd(((v_a-v_b)*L/|L|)* L/|L|);
+
+		//vec3 Fs = -1*Ks*(length)*L.Normalize();
+		//vec3 Fd = -1*Kd*((L*diffVelocity)/L.Length())*L.Normalize();
+
+		////One particle is -F the other is F
+		//a.force += Fs + Fd;
+		//b.force += -1*(Fs+Fd);
+  //  }
+}
 
 
 //---------------------------------------------------------------------
@@ -1463,7 +1563,7 @@ int HairMesh::HairStrandList::size() {
 	return strands.size();
 }
 
-HairMesh::HairStrand HairMesh::HairStrandList::getStrand(unsigned int index) {
+HairMesh::HairStrand& HairMesh::HairStrandList::getStrand(unsigned int index) {
 	return strands[index];
 }
 

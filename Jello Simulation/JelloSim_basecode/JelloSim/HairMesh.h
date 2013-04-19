@@ -206,6 +206,20 @@ protected:
 //##############  HAIR STRANDS YO ##################
 //##################################################
 protected:
+	///Update Functions
+	void ComputeHairForces(double dt);
+	void applyStrainLimiting(double dt);
+	void applySelfRepulsions(double dt);
+	void updatePosition(double dt);
+	void resolveBodyCollisions(double dt);
+	void resolveSelfCollisions(double dt);
+	void updateVelocity(double dt);
+	void extrapolateVelocity(double dt);
+
+
+
+
+
 	typedef std::vector<Particle> ParticleList;
 	void DrawHair();
 	void DrawHairParticles();
@@ -269,7 +283,7 @@ protected:
 			HairStrandList();
 			HairStrandList(const HairStrandList& p);
 			HairStrandList& operator=(const HairStrandList& p);
-			HairStrand getStrand(unsigned int index);
+			HairStrand& getStrand(unsigned int index);
 			void addStrand(HairStrand s);
 
 			int size();
