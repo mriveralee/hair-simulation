@@ -17,3 +17,5 @@ Debug/
 ipch/
 Release/
 Debug_STL/
+tinyxmld_STL.lib
+
