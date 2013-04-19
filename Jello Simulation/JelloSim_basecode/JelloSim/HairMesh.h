@@ -208,6 +208,7 @@ protected:
 protected:
 	typedef std::vector<Particle> ParticleList;
 	void DrawHair();
+	void DrawHairParticles();
 	//##############################
 	//### Hair Strand Definition ###
 	//##############################

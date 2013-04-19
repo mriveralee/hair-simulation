@@ -320,7 +320,7 @@ void HairMesh::Draw(const vec3& eyePos)
     if (m_drawflags & NORMALS) DrawCollisionNormals();
     if (m_drawflags & FORCES) DrawForces();
 
-	if (SHOULD_DRAW_HAIR) DrawHair();
+	if (SHOULD_DRAW_HAIR) {DrawHair(); DrawHairParticles();}
 
     glEnable(GL_LIGHTING);
 
@@ -1370,7 +1370,36 @@ void HairMesh::DrawHair() {
 
 }
 
+void HairMesh::DrawHairParticles() {
+	glDisable(GL_LIGHTING);
 
+	glPointSize(6.0);
+	glEnable(GL_POINT_SMOOTH);
+    glBegin(GL_POINTS);
+    glColor3f(0.0, 0.0, 0.0);
+
+    HairStrandList& strandList = this->StrandList;
+    for (unsigned int i = 0; i < strandList.size(); i++) {
+		//Get current Strand
+		const HairStrand strand = strandList.getStrand(i);
+
+		//Get Particles for a strand
+		const HairMesh::ParticleList hairParticles = strand.strandParticles;
+		for (unsigned int k = 0; k <  hairParticles.size(); k++) {
+			
+			//Current Particle in a strand
+			const Particle p0 = hairParticles[k];
+
+			//Create vertices for each particle to draw a line between them
+			glVertex3f(p0.position[0], p0.position[1], p0.position[2]);
+		}
+    }
+
+    glEnd();
+    glEnable(GL_LIGHTING);
+
+
+}
 
 
 //---------------------------------------------------------------------
