@@ -17,6 +17,8 @@ double HairMesh::friction_Amp = 2;
 double HairMesh::COLLISION_THRESHOLD = 0.01; 
 double HairMesh::jelloStartY = 1.3; //0.0
 
+
+bool SHOULD_DRAW_HAIR = true;
 // TODO
 double HairMesh::g_attachmentKs = 0.000;
 double HairMesh::g_attachmentKd = 0.000;
@@ -164,104 +166,6 @@ void HairMesh::GetCell(int idx, int& i, int &j, int& k) const
     j = (int) ROUND(cols*(FRACT(idx/cols)));
     i = (int) ROUND(rows*(FRACT(tmp/rows)));
     k = (int) FLOOR(tmp/rows);
-}
-
-void HairMesh::InitHairMesh()
-{
-    m_vsprings.clear();
-
-    if (m_width < 0.01 || m_height < 0.01 || m_depth < 0.01) return;
-    if (m_cols < 1 || m_rows < 1 || m_stacks < 1) return;
-
-    // Init particles
-    float wcellsize = m_width / m_cols;
-    float hcellsize = m_height / m_rows;
-    float dcellsize = m_depth / m_stacks;
-    
-    for (int i = 0; i < m_rows+1; i++)
-    {
-        for (int j = 0; j < m_cols+1; j++)
-        {
-            for (int k = 0; k < m_stacks+1; k++)
-            {
-                float x = -m_width*0.5f + wcellsize*i;
-                float y = 0.5 + hcellsize*j+jelloStartY;  /// Starting Height of cube
-                float z = -m_depth*0.5f + dcellsize*k;
-                m_vparticles[i][j][k] = Particle(GetIndex(i,j,k), vec3(x, y, z));
-            }
-        }
-    }
-
-    // Setup structural springs
-    ParticleGrid& g = m_vparticles;
-    for (int i = 0; i < m_rows+1; i++)
-    {
-        for (int j = 0; j < m_cols+1; j++)
-        {
-            for (int k = 0; k < m_stacks+1; k++)
-            {
-				//Structural Springs
-				if (j < m_cols) AddStructuralSpring(GetParticle(g,i,j,k), GetParticle(g,i,j+1,k));
-				if (i < m_rows) AddStructuralSpring(GetParticle(g,i,j,k), GetParticle(g,i+1,j,k));
-				if (k < m_stacks) AddStructuralSpring(GetParticle(g,i,j,k), GetParticle(g,i,j,k+1));
-				
-				//Bend Springs
-				if (i < m_rows-1) AddBendSpring(GetParticle(g,i,j,k), GetParticle(g,i+2,j,k));
-				if (j < m_cols-1) AddBendSpring(GetParticle(g,i,j,k), GetParticle(g,i,j+2,k));
-				if (k < m_stacks-1) AddBendSpring(GetParticle(g,i,j,k), GetParticle(g,i,j,k+2));
-				
-				//Shear Springs (Required) 
-				if (i < m_rows && j < m_cols){
-					AddShearSpring(GetParticle(g,i,j,k), GetParticle(g,i+1,j+1,k));
-					AddShearSpring(GetParticle(g,i+1,j,k), GetParticle(g,i,j+1,k));
-				}
-				if (i < m_rows && k < m_stacks){
-					AddShearSpring(GetParticle(g,i,j,k), GetParticle(g,i+1,j,k+1));
-					AddShearSpring(GetParticle(g,i+1,j,k), GetParticle(g,i,j,k+1));
-				}
-				if (j < m_cols && k < m_stacks){
-					AddShearSpring(GetParticle(g,i,j,k), GetParticle(g,i,j+1,k+1));
-					AddShearSpring(GetParticle(g,i,j,k+1), GetParticle(g,i,j+1,k));
-				}
-
-				//Additional shear springs (across diagonals of cube
-				//Shear Springs (Required) 
-				if (i < m_rows && j < m_cols && k < m_stacks){
-					AddShearSpring(GetParticle(g,i,j,k), GetParticle(g, i+1, j+1, k+1));
-				}
-				if (i > 0.0 && j > m_cols && k < m_stacks){
-					AddShearSpring(GetParticle(g,i,j,k), GetParticle(g, i-1, j+1, k+1));
-				}
-				if (i < m_rows && j > 0.0 && k < m_stacks){
-					AddShearSpring(GetParticle(g,i,j,k), GetParticle(g, i+1, j-1, k+1));
-				}
-				if ( i > 0.0 && j > 0.0 && k < m_stacks){
-					AddShearSpring(GetParticle(g,i,j,k), GetParticle(g, i-1, j-1, k+1));
-				}
-				
-
-				//Additional Bend Springs for 3 & 5 & 7
-				if (i < m_rows-2) AddBendSpring(GetParticle(g,i,j,k), GetParticle(g,i+3,j,k));
-				if (j < m_cols-2) AddBendSpring(GetParticle(g,i,j,k), GetParticle(g,i,j+3,k));
-				if (k < m_stacks-2) AddBendSpring(GetParticle(g,i,j,k), GetParticle(g,i,j,k+3));
-				
-				if (i < m_rows-3) AddBendSpring(GetParticle(g,i,j,k), GetParticle(g,i+4,j,k));
-				if (j < m_cols-3) AddBendSpring(GetParticle(g,i,j,k), GetParticle(g,i,j+4,k));
-				if (k < m_stacks-3) AddBendSpring(GetParticle(g,i,j,k), GetParticle(g,i,j,k+4));
-				
-
-			}
-        }
-    }
-
-    // Init mesh geometry
-    m_mesh.clear();
-    m_mesh.push_back(FaceMesh(*this,XLEFT));
-    m_mesh.push_back(FaceMesh(*this,XRIGHT));
-    m_mesh.push_back(FaceMesh(*this,YTOP));
-    m_mesh.push_back(FaceMesh(*this,YBOTTOM));
-    m_mesh.push_back(FaceMesh(*this,ZFRONT));
-    m_mesh.push_back(FaceMesh(*this,ZBACK));
 }
 
 void HairMesh::AddStructuralSpring(Particle& p1, Particle& p2)
@@ -416,7 +320,10 @@ void HairMesh::Draw(const vec3& eyePos)
     if (m_drawflags & NORMALS) DrawCollisionNormals();
     if (m_drawflags & FORCES) DrawForces();
 
+	if (SHOULD_DRAW_HAIR) DrawHair();
+
     glEnable(GL_LIGHTING);
+
 }
 
 void HairMesh::Update(double dt, const World& world, const vec3& externalForces)
@@ -1308,6 +1215,163 @@ bool HairMesh::FaceMesh::compare(const FaceMesh& one, const FaceMesh& other)
 {
     return one.distToEye > other.distToEye;
 }
+///////////////////////////////////////////////////////////////////////////////////
+///////////////////////////// ALL DAT HURRRRRR ////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////
+
+//###################################################
+//################ InitHairMesh #####################
+//###################################################
+void HairMesh::InitHairMesh()
+{
+    m_vsprings.clear();
+
+    if (m_width < 0.01 || m_height < 0.01 || m_depth < 0.01) return;
+    if (m_cols < 1 || m_rows < 1 || m_stacks < 1) return;
+
+    // Init particles
+    float wcellsize = m_width / m_cols;
+    float hcellsize = m_height / m_rows;
+    float dcellsize = m_depth / m_stacks;
+    
+    for (int i = 0; i < m_rows+1; i++)
+    {
+        for (int j = 0; j < m_cols+1; j++)
+        {
+            for (int k = 0; k < m_stacks+1; k++)
+            {
+                float x = -m_width*0.5f + wcellsize*i;
+                float y = 0.5 + hcellsize*j+jelloStartY;  /// Starting Height of cube
+                float z = -m_depth*0.5f + dcellsize*k;
+                m_vparticles[i][j][k] = Particle(GetIndex(i,j,k), vec3(x, y, z));
+            }
+        }
+    }
+
+    // Setup structural springs
+    ParticleGrid& g = m_vparticles;
+    for (int i = 0; i < m_rows+1; i++)
+    {
+        for (int j = 0; j < m_cols+1; j++)
+        {
+            for (int k = 0; k < m_stacks+1; k++)
+            {
+				//Structural Springs
+				if (j < m_cols) AddStructuralSpring(GetParticle(g,i,j,k), GetParticle(g,i,j+1,k));
+				if (i < m_rows) AddStructuralSpring(GetParticle(g,i,j,k), GetParticle(g,i+1,j,k));
+				if (k < m_stacks) AddStructuralSpring(GetParticle(g,i,j,k), GetParticle(g,i,j,k+1));
+				
+				//Bend Springs
+				if (i < m_rows-1) AddBendSpring(GetParticle(g,i,j,k), GetParticle(g,i+2,j,k));
+				if (j < m_cols-1) AddBendSpring(GetParticle(g,i,j,k), GetParticle(g,i,j+2,k));
+				if (k < m_stacks-1) AddBendSpring(GetParticle(g,i,j,k), GetParticle(g,i,j,k+2));
+				
+				//Shear Springs (Required) 
+				if (i < m_rows && j < m_cols){
+					AddShearSpring(GetParticle(g,i,j,k), GetParticle(g,i+1,j+1,k));
+					AddShearSpring(GetParticle(g,i+1,j,k), GetParticle(g,i,j+1,k));
+				}
+				if (i < m_rows && k < m_stacks){
+					AddShearSpring(GetParticle(g,i,j,k), GetParticle(g,i+1,j,k+1));
+					AddShearSpring(GetParticle(g,i+1,j,k), GetParticle(g,i,j,k+1));
+				}
+				if (j < m_cols && k < m_stacks){
+					AddShearSpring(GetParticle(g,i,j,k), GetParticle(g,i,j+1,k+1));
+					AddShearSpring(GetParticle(g,i,j,k+1), GetParticle(g,i,j+1,k));
+				}
+
+				//Additional shear springs (across diagonals of cube
+				//Shear Springs (Required) 
+				if (i < m_rows && j < m_cols && k < m_stacks){
+					AddShearSpring(GetParticle(g,i,j,k), GetParticle(g, i+1, j+1, k+1));
+				}
+				if (i > 0.0 && j > m_cols && k < m_stacks){
+					AddShearSpring(GetParticle(g,i,j,k), GetParticle(g, i-1, j+1, k+1));
+				}
+				if (i < m_rows && j > 0.0 && k < m_stacks){
+					AddShearSpring(GetParticle(g,i,j,k), GetParticle(g, i+1, j-1, k+1));
+				}
+				if ( i > 0.0 && j > 0.0 && k < m_stacks){
+					AddShearSpring(GetParticle(g,i,j,k), GetParticle(g, i-1, j-1, k+1));
+				}
+				
+
+				//Additional Bend Springs for 3 & 5 & 7
+				if (i < m_rows-2) AddBendSpring(GetParticle(g,i,j,k), GetParticle(g,i+3,j,k));
+				if (j < m_cols-2) AddBendSpring(GetParticle(g,i,j,k), GetParticle(g,i,j+3,k));
+				if (k < m_stacks-2) AddBendSpring(GetParticle(g,i,j,k), GetParticle(g,i,j,k+3));
+				
+				if (i < m_rows-3) AddBendSpring(GetParticle(g,i,j,k), GetParticle(g,i+4,j,k));
+				if (j < m_cols-3) AddBendSpring(GetParticle(g,i,j,k), GetParticle(g,i,j+4,k));
+				if (k < m_stacks-3) AddBendSpring(GetParticle(g,i,j,k), GetParticle(g,i,j,k+4));
+				
+
+			}
+        }
+    }
+
+    // Init mesh geometry
+    m_mesh.clear();
+    m_mesh.push_back(FaceMesh(*this,XLEFT));
+    m_mesh.push_back(FaceMesh(*this,XRIGHT));
+    m_mesh.push_back(FaceMesh(*this,YTOP));
+    m_mesh.push_back(FaceMesh(*this,YBOTTOM));
+    m_mesh.push_back(FaceMesh(*this,ZFRONT));
+    m_mesh.push_back(FaceMesh(*this,ZBACK));
+
+	//##########################################################
+	//#################### HAIR INITIALIZATION #################
+	//##########################################################
+	//Init Hairs
+	this->StrandList = HairStrandList();
+	
+	//Make a strand
+	HairStrand h = HairStrand(vec3(0, 2, 0));
+	//Add to our strandList
+	StrandList.addStrand(h);
+
+
+
+
+}
+
+//##########################################################
+//######################### DRAW HAIR ######################
+//##########################################################
+void HairMesh::DrawHair() {
+	glDisable(GL_LIGHTING);
+
+    glBegin(GL_LINES);
+    glColor3f(0.0, 1.0, 1.0);
+
+    HairStrandList& strandList = this->StrandList;
+    for (unsigned int i = 0; i < strandList.size(); i++) {
+		//Get current Strand
+		const HairStrand strand = strandList.getStrand(i);
+
+		//Get Particles for a strand
+		const HairMesh::ParticleList hairParticles = strand.strandParticles;
+		for (unsigned int k = 0; k <  hairParticles.size()-1; k++) {
+			
+			//Current Particle in a strand
+			const Particle p0 = hairParticles[k];
+			//Next particle in the strand
+			const Particle p1 = hairParticles[k+1];
+
+			//Create vertices for each particle to draw a line between them
+			glVertex3f(p0.position[0], p0.position[1], p0.position[2]);
+            glVertex3f(p1.position[0], p1.position[1], p1.position[2]);
+		}
+    }
+
+    glEnd();
+    glEnable(GL_LIGHTING);
+
+
+}
+
+
+
 
 //---------------------------------------------------------------------
 //-------------------------- HairStrandList ---------------------------
@@ -1338,6 +1402,17 @@ HairMesh::HairStrandList& HairMesh::HairStrandList::operator=(const HairStrandLi
     return *this;
 }
 
+int HairMesh::HairStrandList::size() {
+	return strands.size();
+}
+
+HairMesh::HairStrand HairMesh::HairStrandList::getStrand(unsigned int index) {
+	return strands[index];
+}
+
+void HairMesh::HairStrandList::addStrand(HairStrand h) {
+	strands.push_back(h);
+}
 
 //---------------------------------------------------------------------
 //---------------------------- HairStrand -----------------------------
@@ -1348,10 +1423,10 @@ HairMesh::HairStrand HairMesh::HairStrand::EMPTY;
 //#######################################################
 //############# HairStrand Constructor #1 ###############
 //#######################################################
-HairMesh::HairStrand::HairStrand(int idx, const vec3& p)
+HairMesh::HairStrand::HairStrand(const vec3& p)
 {
-    index = idx;
 	position = p;
+	strandParticles = ParticleList();
 	InitStrand();
 }
 
@@ -1361,6 +1436,8 @@ HairMesh::HairStrand::HairStrand(int idx, const vec3& p)
 //#######################################################
 HairMesh::HairStrand::HairStrand() : index(-1), position(0,0,0)
 {
+	strandParticles = ParticleList();
+	InitStrand();
 }
 
 
@@ -1370,6 +1447,7 @@ HairMesh::HairStrand::HairStrand() : index(-1), position(0,0,0)
 HairMesh::HairStrand::HairStrand(const HairMesh::HairStrand& h) : 
     index(h.index), position(h.position)
 {
+	strandParticles = h.strandParticles;
 }
 
 //#######################################################
@@ -1381,6 +1459,8 @@ HairMesh::HairStrand& HairMesh::HairStrand::operator=(const HairMesh::HairStrand
 
     index = h.index;
     position = h.position;
+	strandParticles = h.strandParticles;
+	
     return *this;
 }
 
@@ -1395,7 +1475,7 @@ void HairMesh::HairStrand::InitStrand()
     if (m_width < 0.01 || m_height < 0.01 || m_depth < 0.01) return;
     if (m_cols < 1 || m_rows < 1 || m_stacks < 1) return;
 	*/
-
+	strandParticles = ParticleList();
     // Init particles
 	float strandLength = 1.0f;
 	int numParticles = 6;

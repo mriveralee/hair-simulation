@@ -206,19 +206,20 @@ protected:
 //##############  HAIR STRANDS YO ##################
 //##################################################
 protected:
+	typedef std::vector<Particle> ParticleList;
+	void DrawHair();
 	//##############################
 	//### Hair Strand Definition ###
 	//##############################
 	class HairStrand
 	{
-		typedef std::vector<Particle> ParticleList;
 		Particle& GetParticle(ParticleList& list, int i);
 		const Particle& GetParticle(const ParticleList& list, int i) const;
 		public:
 			HairStrand();
 			HairStrand(const HairStrand& h);
 			HairStrand& operator=(const HairStrand& h);
-			HairStrand(int idx, const vec3& pos);
+			HairStrand(const vec3& pos);
 
 			std::vector<Spring> strandSprings;
             std::vector<Intersection> strandContacts;
@@ -252,6 +253,10 @@ protected:
 			HairStrandList();
 			HairStrandList(const HairStrandList& p);
 			HairStrandList& operator=(const HairStrandList& p);
+			HairStrand getStrand(unsigned int index);
+			void addStrand(HairStrand s);
+
+			int size();
 	};
 		
 	//###############################
