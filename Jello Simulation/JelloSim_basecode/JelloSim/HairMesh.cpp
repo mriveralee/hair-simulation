@@ -1534,11 +1534,11 @@ void HairMesh::HairStrand::InitStrand()
 	*/
 	strandParticles = ParticleList();
     // Init particles
-	float strandLength = 1.0f;
+	float strandLength = 2.0f;
 	int numHairParticles = 8;
 	int numGhostParticles = numHairParticles - 1;
 	int numTotalParticles = numHairParticles + numGhostParticles;
-	float particleDistOffset = strandLength / numHairParticles;
+	float particleDistOffset = strandLength / numTotalParticles;
 
 	strandParticles.resize(numTotalParticles);
 	
@@ -1552,7 +1552,7 @@ void HairMesh::HairStrand::InitStrand()
 	for (int i = 1; i < numTotalParticles; i++) {
 		if (i % 2 == 1) {
 			float xG = position[0] + 0.3;
-			float yG = position[1] - i * particleDistOffset - 0.5 * particleDistOffset;
+			float yG = position[1] - i * particleDistOffset;
 			float zG = position[2];
 			strandParticles[i] = GhostParticle(i, vec3(xG,yG,zG));
 		} else {
