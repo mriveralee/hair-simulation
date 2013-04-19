@@ -209,6 +209,21 @@ protected:
 	typedef std::vector<Particle> ParticleList;
 	void DrawHair();
 	void DrawHairParticles();
+
+	//##############################
+	//####### Ghost Particle #######
+	//##############################
+	class GhostParticle : public Particle
+    {
+    public:
+        GhostParticle();
+        GhostParticle(const GhostParticle& p);
+        GhostParticle& operator=(const GhostParticle& p);
+	    GhostParticle(int idx, const vec3& pos, const vec3& vel = vec3(0,0,0), double m = 1);
+	};
+
+
+
 	//##############################
 	//### Hair Strand Definition ###
 	//##############################

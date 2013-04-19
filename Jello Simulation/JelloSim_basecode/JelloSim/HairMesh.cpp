@@ -1219,6 +1219,41 @@ bool HairMesh::FaceMesh::compare(const FaceMesh& one, const FaceMesh& other)
 ///////////////////////////// ALL DAT HURRRRRR ////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////////
 
+//###############################################################
+//######################### GhostParticle #######################
+//###############################################################
+HairMesh::GhostParticle::GhostParticle(int idx, const vec3& p, const vec3& v, double m)
+{
+    index = idx;
+    position = p;
+    velocity = v;
+    force = vec3(0,0,0);
+    mass = m;
+}
+
+HairMesh::GhostParticle::GhostParticle()
+{
+	Particle::Particle();
+}
+
+HairMesh::GhostParticle::GhostParticle(const HairMesh::GhostParticle& p) 
+{
+	GhostParticle::GhostParticle(p.index, p.position, p.velocity, p.mass);
+	force = p.force;
+}
+
+HairMesh::Particle& HairMesh::Particle::operator=(const HairMesh::Particle& p)
+{
+    if (&p == this) return *this;
+
+    index = p.index;
+    position = p.position;
+    velocity = p.velocity;
+    force = p.force;
+    mass = p.mass;
+    return *this;
+}
+
 //###################################################
 //################ InitHairMesh #####################
 //###################################################
