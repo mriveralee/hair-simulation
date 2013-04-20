@@ -250,6 +250,7 @@ protected:
 			HairStrand(const HairStrand& h);
 			HairStrand& operator=(const HairStrand& h);
 			HairStrand(const vec3& pos);
+			HairStrand(const vec3& pos, double angle);
 
 			std::vector<Spring> strandSprings;
             std::vector<Intersection> strandContacts;
@@ -257,6 +258,7 @@ protected:
 
 
             virtual void InitStrand();
+			virtual void InitStrand(double angle);
 
 			int index;
 
