@@ -343,6 +343,7 @@ void HairMesh::Draw(const vec3& eyePos)
 void HairMesh::Update(double dt, const World& world, const vec3& externalForces)
 {
     m_externalForces = externalForces;
+	CheckCollisions(world);
 	ComputeHairForces(dt);
 	updateVelocity(dt);
 	applyStrainLimiting(dt);			// v_n+dt/2
@@ -585,7 +586,7 @@ bool HairMesh::FloorIntersection(Particle& p, Intersection& intersection)
 
 
 bool HairMesh::SphereIntersection(Particle& p, World::Sphere* sphere, Intersection& intersection) {
-
+	
 	vec3 s = sphere->pos;
 	double radius = sphere->r; 
 	vec3 x = p.position;
@@ -1553,6 +1554,7 @@ void HairMesh::updatePosition(double dt) {
 	}
 
 }
+
 void HairMesh::resolveBodyCollisions(double dt) {
 
 }
@@ -1622,6 +1624,49 @@ void HairMesh::ComputeHairForces(double dt) {
   //  }
 }
 
+
+void HairMesh::CheckCollisions(const World& world) {
+    m_vcontacts.clear();
+    m_vcollisions.clear();
+	
+	int totalNumStrands = StrandList.size();
+	//int totalNumParticles = 0;
+	for (int i = 0; i < totalNumStrands; i++) {
+		HairStrand strand = StrandList.getStrand(i);
+		int numParticlesInStrand = strand.strandParticles.size();
+
+		for (int j = 0; j < numParticlesInStrand; j++) {
+			Particle& p = GetParticleInStrand(i,j);
+
+			// 1. Check collisions with world objects 
+			for (int k = 0; k < world.m_shapes.size(); k++) {
+				Intersection intersection;
+
+				if (world.m_shapes[k]->GetType() == World::SPHERE &&
+					SphereIntersection(p, (World::Sphere*) world.m_shapes[k], intersection))
+				{
+					//cout << "SPHEREEEE" << endl;
+					if (intersection.m_type == IntersectionType::CONTACT) {
+						m_vcontacts.push_back(intersection);
+					} else if (intersection.m_type == IntersectionType::COLLISION) {
+						m_vcollisions.push_back(intersection);
+					}
+				}
+				else if (world.m_shapes[k]->GetType() == World::GROUND && 
+					FloorIntersection(p, intersection))
+                {
+					//cout << "FLOOOOOOR" << endl;
+					if (intersection.m_type == IntersectionType::CONTACT) {
+						m_vcontacts.push_back(intersection);
+					} else if (intersection.m_type == IntersectionType::COLLISION) {
+						m_vcollisions.push_back(intersection);
+					}
+                }
+			} // ----------------END FOR k-----------------------------------
+		} // ----------------END FOR j-----------------------------------
+	} // ----------------END FOR i-----------------------------------
+
+}
 
 //---------------------------------------------------------------------
 //-------------------------- HairStrandList ---------------------------

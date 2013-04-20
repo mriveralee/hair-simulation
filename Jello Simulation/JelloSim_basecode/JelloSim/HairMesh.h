@@ -240,6 +240,8 @@ protected:
 	void updateVelocity(double dt);
 	void extrapolateVelocity(double dt);
 
+	void CheckCollisions(const World& world);
+
 	//Get particle by strand and particle index
 	Particle& GetParticleInStrand(int sNum, int pNum);
 
