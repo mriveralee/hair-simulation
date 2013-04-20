@@ -1436,7 +1436,7 @@ void HairMesh::AddBendSpring(int s1, int p1, int s2, int p2)
 //######################### DRAW HAIR ######################
 //##########################################################
 void HairMesh::DrawHair() {
-	return;
+	//return;
 	glDisable(GL_LIGHTING);
 
     glBegin(GL_LINES);
