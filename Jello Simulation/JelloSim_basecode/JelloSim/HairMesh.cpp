@@ -1307,11 +1307,17 @@ void HairMesh::InitHairMesh()
 	this->StrandList = HairStrandList();
 	
 	//Make a strand
-	HairStrand h = HairStrand(vec3(0, 1, 0));
+	//HairStrand h = HairStrand(vec3(0, 1, 0));
 	//Add to our strandList
-	StrandList.addStrand(h);
+	//StrandList.addStrand(h);
 
-
+	int numStrands = 3;
+	double angleOffset = 360.0 / numStrands;
+	// Create a strand for each angle and add to StrandList
+	for (int i = 0; i < numStrands; i++) {
+		HairStrand h = HairStrand(vec3(0, 1, 0), i * angleOffset);
+		StrandList.addStrand(h);
+	}
 
 	//For each hair strand make the springs
 	for (unsigned int sNum = 0; sNum < StrandList.size(); sNum++) {
@@ -1383,8 +1389,6 @@ void HairMesh::InitHairMesh()
 
 
 	}
-
-
 
 }
 
@@ -1696,6 +1700,15 @@ HairMesh::HairStrand::HairStrand() : index(-1), position(0,0,0)
 	InitStrand();
 }
 
+//#######################################################
+//############# HairStrand Constructor #3 ###############
+//#######################################################
+HairMesh::HairStrand::HairStrand(const vec3& p, double angle)
+{
+	position = p;
+	strandParticles = ParticleList();
+	InitStrand(angle);
+}
 
 //#######################################################
 //########## HairStrand Equality Constructor ############
@@ -1769,5 +1782,52 @@ void HairMesh::HairStrand::InitStrand()
 		// TODO: ADD SPRINGS (see InitHairMesh)
 		//cout << list[i].position << endl;
     }
+}
 
+void HairMesh::HairStrand::InitStrand(double angle)
+{
+    strandSprings.clear();
+    /*
+    if (m_width < 0.01 || m_height < 0.01 || m_depth < 0.01) return;
+    if (m_cols < 1 || m_rows < 1 || m_stacks < 1) return;
+	*/
+	strandParticles = ParticleList();
+    // Init particles
+	float strandLength = 2.0f;
+	int numHairParticles = 8;
+	int numGhostParticles = numHairParticles - 1;
+	int numTotalParticles = numHairParticles + numGhostParticles;
+	float particleDistOffset = strandLength / numTotalParticles;
+
+	strandParticles.resize(numTotalParticles);
+	
+	// start with 1 single hair particle
+	float x = position[0]; // root position instance variable
+	float y = position[1]; // starting height of strand for now
+	float z = position[2];
+	strandParticles[0] = Particle(0, vec3(x,y,z));
+
+	double MATH_PI = 3.14;
+	// GHOST PARTICLES HAVE ODD INDICES, HAIR PARTICLES HAVE EVEN
+	for (int i = 1; i < numTotalParticles; i++) {
+		if (i % 2 == 1) {
+			float xG = position[0] - (i * particleDistOffset) * cos(2 * MATH_PI * angle / 360.0);
+			float yG = position[1] + 0.3;
+			float zG = position[2] - (i * particleDistOffset) * sin(2 * MATH_PI * angle / 360.0);
+			strandParticles[i] = GhostParticle(i, vec3(xG,yG,zG));
+		} else {
+			float xH = position[0] - (i * particleDistOffset) * cos(2 * MATH_PI * angle / 360.0);
+			float yH = position[1];
+			float zH = position[2] - (i * particleDistOffset) * sin(2 * MATH_PI * angle / 360.0);
+			strandParticles[i] = Particle(i, vec3(xH,yH,zH));
+		}
+
+	}
+
+    // Setup structural springs
+    ParticleList& list = strandParticles;
+	for (int i = 0; i < numTotalParticles; i++) {
+		// TODO: ADD SPRINGS (see InitHairMesh)
+		//cout << list[i].position << endl;
+    }
 }

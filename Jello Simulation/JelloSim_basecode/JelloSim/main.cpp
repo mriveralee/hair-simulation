@@ -14,13 +14,13 @@
 JelloMesh theJello;
 HairMesh theHair;
 Camera theCamera;
-World theWorld("worlds/ground.xml");				//Given Ground Scene
+//World theWorld("worlds/ground.xml");				//Given Ground Scene
 //World theWorld("worlds/cylinders.xml");			//Given cylinder scene
 //World theWorld("worlds/coolScene.xml");			//Cool Custom scene with bunch of objects
 //World theWorld("worlds/myCylinder2.xml");			//Test Cylinder lying on floor
 //World theWorld("worlds/sphere.xml");				//Sphere testing
 //World theWorld("worlds/cylinderBottom.xml");		//Test for top Cap - Cylinder facing vertically
-
+World theWorld("worlds/sphereHead.xml");			//Large sphere head
 
 mmc::FpsTracker theFpsTracker;
 
