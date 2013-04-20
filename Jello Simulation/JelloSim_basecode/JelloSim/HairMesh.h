@@ -231,7 +231,6 @@ protected:
 //##################################################
 protected:
 	///HAIR Update Functions
-	void ComputeHairForces(double dt);
 	void applyStrainLimiting(double dt);
 	void applySelfRepulsions(double dt);
 	void updatePosition(double dt);
@@ -326,6 +325,7 @@ protected:
 			HairStrand& getStrand(unsigned int index);
 			void addStrand(HairStrand s);
 
+			HairMesh::Particle& getParticleInStrand(int sNum, int pNum);
 			int size();
 	};
 		
@@ -333,7 +333,8 @@ protected:
 	//######## MESH VARS ############
 	//#################################
 	HairStrandList StrandList; //Var  that holds all of the strands for the Mesh
-	
+	void ComputeHairForces(HairStrandList& strands, double dt);
+
 	//TODO: ADD vars for inter-strand collisions (strand 1 hits strand 2)
 };
 

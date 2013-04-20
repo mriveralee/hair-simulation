@@ -343,28 +343,24 @@ void HairMesh::Draw(const vec3& eyePos)
 void HairMesh::Update(double dt, const World& world, const vec3& externalForces)
 {
     m_externalForces = externalForces;
-	ComputeHairForces(dt);
-	updateVelocity(dt);
+	//ComputeHairForces(StrandList, dt);
+	//updateVelocity(dt);
 	applyStrainLimiting(dt);			// v_n+dt/2
 	applySelfRepulsions(dt);			// v_n+dt/2
-	updatePosition(dt);				// x_n+1 = x_n + (dt/2)
+	//updatePosition(dt);				// x_n+1 = x_n + (dt/2)
 	resolveBodyCollisions(dt);			// modify  x_n+1 and v_n
 	resolveSelfCollisions(dt);			// modify  x_n+1 and v_n
-	updateVelocity(dt);					// v_n+1/2 = v_n + dt/2a(tn+1/2, x_n, v_n+1/2)
+	//updateVelocity(dt);					// v_n+1/2 = v_n + dt/2a(tn+1/2, x_n, v_n+1/2)
 	extrapolateVelocity(dt);			// v_n+1 = 2v_n+1/2 - v_n
 	applySelfRepulsions(dt);			// Modify v_n+1 Use n+1
 	
 //	CheckForCollisions(m_vparticles, world);
-//	ComputeForces(m_vparticles);
+
+	ComputeHairForces(StrandList, dt);
 //	ResolveContacts(m_vparticles);
 //	ResolveCollisions(m_vparticles);
 
-    switch (m_integrationType)
-    {
-    case EULER: EulerIntegrate(dt); break;
-    case MIDPOINT: MidPointIntegrate(dt); break;
-    case RK4: RK4Integrate(dt); break;
-    }
+	RK4Integrate(dt);
 }
 
 void HairMesh::CheckForCollisions(ParticleGrid& grid, const World& world)
@@ -442,31 +438,6 @@ void HairMesh::ComputeForces(ParticleGrid& grid)
         }
     }
 
-  //  // Update springs
-  //  for(unsigned int i = 0; i < m_vsprings.size(); i++)
-  //  {
-  //      Spring& spring = m_vsprings[i];
-  //      Particle& a = GetParticle(grid, spring.m_p1);
-  //      Particle& b = GetParticle(grid, spring.m_p2);
-		//
-		////Spring Variables
-		//double Ks = spring.m_Ks;				 //Hook's Spring Constant
-		//double Kd = spring.m_Kd;				 //Damping Constant
-		//double R = spring.m_restLen;			 //Rest Length of Spring
-		//vec3 L = a.position - b.position;			 //Vector from B to A (position)
-		//vec3 normL = L/L.Length();				 //Normalized L vector
-		//vec3 diffVelocity = a.velocity - b.velocity;	 //Vector Velocities
-		//double length = L.Length()-R;
-		////Stiffness Spring Force:	-Ks(|L|-R)*L/(|L|);
-		////Damping Force:			-kd(((v_a-v_b)*L/|L|)* L/|L|);
-
-		//vec3 Fs = -1*Ks*(length)*L.Normalize();
-		//vec3 Fd = -1*Kd*((L*diffVelocity)/L.Length())*L.Normalize();
-
-		////One particle is -F the other is F
-		//a.force += Fs + Fd;
-		//b.force += -1*(Fs+Fd);
-  //  }
 }
 
 //Object particle is below the surface of another object
@@ -801,118 +772,103 @@ void HairMesh::MidPointIntegrate(double dt)
 void HairMesh::RK4Integrate(double dt)
 {
 	double halfdt = 0.5 * dt;
-	ParticleGrid target = m_vparticles; // target is a copy!
-	ParticleGrid& source = m_vparticles; // source is a ptr!
 
-	// Step 1
-	ParticleGrid accum1 = m_vparticles;
-	for (int i = 0; i < m_rows+1; i++)
-	{
-		for (int j = 0; j < m_cols+1; j++)
-		{
-			for (int k = 0; k < m_stacks+1; k++)
-			{
-				Particle& s = GetParticle(source, i,j,k);
+	HairStrandList& source = StrandList;	//Ptr
+	HairStrandList target = StrandList;		//Copy
 
-				Particle& k1 = GetParticle(accum1, i,j,k);
+	for (unsigned int i = 0; i < StrandList.size(); i++) {
+		HairStrand& sStrand = source.getStrand(i);
+		HairStrand& tStrand = target.getStrand(i);
+		
+		//Get Particles for a strand 
+		HairMesh::ParticleList& sParticles = sStrand.strandParticles;
+		HairMesh::ParticleList& tParticles = tStrand.strandParticles;
+		
+		//Step 1 
+		HairMesh::ParticleList accum1 = sStrand.strandParticles;
+		for (unsigned int j = 0; j < sParticles.size(); j++) {
+				if (j == 0) continue;
+				Particle& s = sParticles[j];
+				Particle& k1 = accum1[j];
 				k1.force = s.force;
 				k1.velocity = s.velocity;
 
-				Particle& t = GetParticle(target, i,j,k);
+				Particle& t = tParticles[j];
 				t.velocity = s.velocity + halfdt * k1.force * 1/k1.mass;
 				t.position = s.position + halfdt * k1.velocity;
-			}
 		}
-	}
 
-	ComputeForces(target);
+		ComputeHairForces(target, dt);
 
-	// Step 2
-	ParticleGrid accum2 = m_vparticles;
-	for (int i = 0; i < m_rows+1; i++)
-	{
-		for (int j = 0; j < m_cols+1; j++)
-		{
-			for (int k = 0; k < m_stacks+1; k++)
-			{
-				Particle& t = GetParticle(target, i,j,k);
-				Particle& k2 = GetParticle(accum2, i,j,k);
+		//Step 2
+		HairMesh::ParticleList accum2 = sStrand.strandParticles;
+		for (unsigned int j = 0; j < sParticles.size(); j++) {
+				if (j == 0) continue;
+				Particle& t =  tParticles[j];
+				Particle& k2 = accum2[j];
 
 				k2.force = t.force;
 				k2.velocity = t.velocity;
 
-				Particle& s = GetParticle(source, i,j,k);
+				Particle& s = sParticles[j];
 				t.velocity = s.velocity + halfdt * k2.force * 1/k2.mass;
 				t.position = s.position + halfdt * k2.velocity;
-			}
 		}
-	}
 
-	ComputeForces(target);
+		ComputeHairForces(target, dt);
 
-	// Step 3
-	ParticleGrid accum3 = m_vparticles;
-	for (int i = 0; i < m_rows+1; i++)
-	{
-		for (int j = 0; j < m_cols+1; j++)
-		{
-			for (int k = 0; k < m_stacks+1; k++)
-			{
-				Particle& t = GetParticle(target, i,j,k);
-				Particle& k3 = GetParticle(accum3, i,j,k);
+		//Step 3
+		HairMesh::ParticleList accum3 = sStrand.strandParticles;
+		for (unsigned int j = 0; j < sParticles.size(); j++) {
+				if (j == 0) continue;
+				Particle& t = tParticles[j];
+				Particle& k3 = accum3[j];
 
 				k3.force = t.force;
 				k3.velocity = t.velocity;
 
-				Particle& s = GetParticle(source, i,j,k);
+				Particle& s = sParticles[j];
 				t.velocity = s.velocity + dt * k3.force * 1/k3.mass;
 				t.position = s.position + dt * k3.velocity;
-			}
 		}
-	}
-	ComputeForces(target);
 
-	// Step 4
-	ParticleGrid accum4 = m_vparticles;
-	for (int i = 0; i < m_rows+1; i++)
-	{
-		for (int j = 0; j < m_cols+1; j++)
-		{
-			for (int k = 0; k < m_stacks+1; k++)
-			{
-				Particle& t = GetParticle(target, i,j,k);
-				Particle& k4 = GetParticle(accum4, i,j,k);
+		ComputeHairForces(target, dt);
+
+		//Step 4
+		HairMesh::ParticleList accum4 = sStrand.strandParticles;
+		for (unsigned int j = 0; j < sParticles.size(); j++) {
+				if (j == 0) continue;
+				Particle& t = tParticles[j];
+				Particle& k4 = accum4[j];
 
 				k4.force = t.force;
 				k4.velocity = t.velocity;
-			}
 		}
-	}
 
-	// Put it all together
-	double asixth = 1/6.0;
-	double athird = 1/3.0;
-	for (int i = 0; i < m_rows+1; i++)
-	{
-		for (int j = 0; j < m_cols+1; j++)
-		{
-			for (int k = 0; k < m_stacks+1; k++)
-			{
-				Particle& p = GetParticle(m_vparticles, i,j,k);
-				Particle& k1 = GetParticle(accum1, i,j,k);
-				Particle& k2 = GetParticle(accum2, i,j,k);
-				Particle& k3 = GetParticle(accum3, i,j,k);
-				Particle& k4 = GetParticle(accum4, i,j,k);
+		ComputeHairForces(target, dt);
+
+		//Put it all together
+		double asixth = 1/6.0;
+		double athird = 1/3.0;
+		for (unsigned int j = 0; j < sParticles.size(); j++) {
+				if (j == 0) continue;
+				Particle& p = sParticles[j];
+				Particle& k1 = accum1[j];
+				Particle& k2 = accum2[j];
+				Particle& k3 = accum3[j];
+				Particle& k4 = accum4[j];
 
 				p.velocity = p.velocity + dt*(asixth * k1.force +
 					athird * k2.force + athird * k3.force + asixth * k4.force)*1/p.mass;
 
 				p.position = p.position + dt*(asixth * k1.velocity +
 				athird * k2.velocity + athird * k3.velocity + asixth * k4.velocity);
-			}
 		}
 	}
 }
+
+
+
 
 
 //---------------------------------------------------------------------
@@ -961,12 +917,6 @@ HairMesh::Spring::Spring(HairMesh::SpringType t,
 
 
 
-//HairMesh::Spring::Spring(SpringType t, Particle& p1, Particle& p2, 
-//            double Ks, double Kd, double restLen) : m_type(t), m_Ks(Ks), m_Kd(Kd), 
-//			m_pt1(p1), m_pt2(p2), m_restLen(restLen) {
-//				//cout <<"Made SPRING" <<endl;
-//				//cout << m_pt1.position << endl;
-//}
 //---------------------------------------------------------------------
 // Particle
 //---------------------------------------------------------------------
@@ -1406,17 +1356,6 @@ void HairMesh::AddBendSpring(int s1, int p1, int s2, int p2)
 	double restLen = (pt1.position - pt2.position).Length();
     HAIR_SPRINGS.push_back(Spring(BEND, s1, p1, s2, p2, g_bendKs, g_bendKd, restLen));
 }
-
-
-/*HairMesh::Spring::Spring(SpringType t, Particle& pt1, Particle& pt2, double Ks, double Kd, double restLen) {
-	m_type = t;
-	m_pt1 = pt1;
-	m_pt2 = pt2;
-	m_Ks = Ks;
-	m_Kd = Kd;
-	m_restLen =restLen;
-}
-*/
     
 
 //##########################################################
@@ -1547,6 +1486,7 @@ void HairMesh::updatePosition(double dt) {
 		ParticleList& particles = strand.strandParticles;
 		//Loop through and apple forces
 		for (unsigned int j = 0; j < particles.size(); j++) {
+			if (j == 0) continue; //RootParticle
 			Particle& p = particles[j];
 			p.position += (dt)*p.velocity;
 		}
@@ -1580,11 +1520,15 @@ void HairMesh::extrapolateVelocity(double dt) {
 
 }
 
+
+
+
+
 //Add Gravity and that good stuff to the particles
-void HairMesh::ComputeHairForces(double dt) {
-	for (unsigned int i = 0; i < StrandList.size(); i++) {
+void HairMesh::ComputeHairForces(HairStrandList& strands, double dt) {
+	for (unsigned int i = 0; i < strands.size(); i++) {
 		//Current Strand
-		HairStrand& strand = StrandList.getStrand(i);
+		HairStrand& strand = strands.getStrand(i);
 		//Strand Particles
 		ParticleList& particles = strand.strandParticles;
 		//Loop through and apple forces
@@ -1595,31 +1539,32 @@ void HairMesh::ComputeHairForces(double dt) {
 		}
 	}
 	
-   // Update springs
-  //  for(unsigned int i = 0; i < m_vsprings.size(); i++)
-  //  {
-  //      Spring& spring = m_vsprings[i];
-  //      Particle& a = GetParticle(grid, spring.m_p1);
-  //      Particle& b = GetParticle(grid, spring.m_p2);
-		//
-		////Spring Variables
-		//double Ks = spring.m_Ks;				 //Hook's Spring Constant
-		//double Kd = spring.m_Kd;				 //Damping Constant
-		//double R = spring.m_restLen;			 //Rest Length of Spring
-		//vec3 L = a.position - b.position;			 //Vector from B to A (position)
-		//vec3 normL = L/L.Length();				 //Normalized L vector
-		//vec3 diffVelocity = a.velocity - b.velocity;	 //Vector Velocities
-		//double length = L.Length()-R;
-		////Stiffness Spring Force:	-Ks(|L|-R)*L/(|L|);
-		////Damping Force:			-kd(((v_a-v_b)*L/|L|)* L/|L|);
+    // Update springs
+    for(unsigned int i = 0; i < HAIR_SPRINGS.size(); i++)
+    {
+        Spring& spring = HAIR_SPRINGS[i];
 
-		//vec3 Fs = -1*Ks*(length)*L.Normalize();
-		//vec3 Fd = -1*Kd*((L*diffVelocity)/L.Length())*L.Normalize();
+		Particle& a = strands.getParticleInStrand(spring.m_s1, spring.m_p1);
+        Particle& b = strands.getParticleInStrand(spring.m_s2, spring.m_p2);
+		
+		//Spring Variables
+		double Ks = spring.m_Ks;				 //Hook's Spring Constant
+		double Kd = spring.m_Kd;				 //Damping Constant
+		double R = spring.m_restLen;			 //Rest Length of Spring
+		vec3 L = a.position - b.position;			 //Vector from B to A (position)
+		vec3 normL = L/L.Length();				 //Normalized L vector
+		vec3 diffVelocity = a.velocity - b.velocity;	 //Vector Velocities
+		double length = L.Length()-R;
+		//Stiffness Spring Force:	-Ks(|L|-R)*L/(|L|);
+		//Damping Force:			-kd(((v_a-v_b)*L/|L|)* L/|L|);
 
-		////One particle is -F the other is F
-		//a.force += Fs + Fd;
-		//b.force += -1*(Fs+Fd);
-  //  }
+		vec3 Fs = -1*Ks*(length)*L.Normalize();
+		vec3 Fd = -1*Kd*((L*diffVelocity)/L.Length())*L.Normalize();
+
+		//One particle is -F the other is F
+		a.force += Fs + Fd;
+		b.force += -1*(Fs+Fd);
+    }
 }
 
 
@@ -1662,6 +1607,12 @@ HairMesh::HairStrand& HairMesh::HairStrandList::getStrand(unsigned int index) {
 
 void HairMesh::HairStrandList::addStrand(HairStrand h) {
 	strands.push_back(h);
+}
+
+HairMesh::Particle& HairMesh::HairStrandList::getParticleInStrand(int sNum, int pNum) {
+	HairStrand& strand = getStrand(sNum);
+	Particle& p = strand.strandParticles[pNum];
+	return p;
 }
 
 //---------------------------------------------------------------------
