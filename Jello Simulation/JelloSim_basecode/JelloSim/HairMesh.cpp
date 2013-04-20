@@ -1316,8 +1316,13 @@ void HairMesh::InitHairMesh()
 	//For each hair strand make the springs
 	for (unsigned int sNum = 0; sNum < StrandList.size(); sNum++) {
 		HairStrand strand = StrandList.getStrand(sNum);
+		
+		//Get Particles for a strand 
 		HairMesh::ParticleList hairParticles = strand.strandParticles;
-		//Get Particles for a strand
+		
+		///////////////////////
+		// Add Edge Springs ///
+		///////////////////////
 		for (unsigned int pNum = 0; pNum < hairParticles.size()-2; pNum+=2 ) {
 			
 			//Current Particle index in a strand (Normal)
@@ -1329,15 +1334,53 @@ void HairMesh::InitHairMesh()
 			//Second Next index Particle in the strand (Normal)
 			int p1 = pNum+2;
 
-			//Add Edge Springs
+			//Add the Edge Springs
 			AddEdgeSpring(sNum, pNum, sNum, pG); //first to ghost
-			AddEdgeSpring(sNum, pG, sNum, p1); //ghost to second
-			AddEdgeSpring(sNum, p0, sNum, p1); //first to second
+			AddEdgeSpring(sNum, pG, sNum, p1);   //ghost to second
+			AddEdgeSpring(sNum, p0, sNum, p1);   //first to second
 		}
-			//Add Torsion Springs
+
+		//////////////////////////
+		// Add Torsion Springs ///
+		//////////////////////////
+		for (unsigned int pNum = 0; pNum < hairParticles.size()-2; pNum+=2 ) {
+			
+			//Current Particle index in a strand (Normal)
+			int p0 = pNum;
+			
+			//Next  particle index in the strand (Ghost)
+			int pG = pNum+1;
+			
+			//Second Next index Particle in the strand (Normal)
+			int p1 = pNum+2;
+
+			//Add the Torsion Springs
+			AddTorsionSpring(sNum, pNum, sNum, pG); //first to ghost
+			AddTorsionSpring(sNum, pG, sNum, p1);   //ghost to second
+			AddTorsionSpring(sNum, p0, sNum, p1);   //first to second
+		}
+
+		///////////////////////
+		// Add Bend Springs ///
+		///////////////////////
+		for (unsigned int pNum = 0; pNum < hairParticles.size()-2; pNum+=2 ) {
+			
+			//Current Particle index in a strand (Normal)
+			int p0 = pNum;
+			
+			//Next  particle index in the strand (Ghost)
+			int pG = pNum+1;
+			
+			//Second Next index Particle in the strand (Normal)
+			int p1 = pNum+2;
+
+			//Add the Torsion Springs
+			AddTorsionSpring(sNum, pNum, sNum, pG); //first to ghost
+			AddTorsionSpring(sNum, pG, sNum, p1);   //ghost to second
+			AddTorsionSpring(sNum, p0, sNum, p1);   //first to second
+		}
 
 
-			//Add Bend Springs
 
 	}
 

@@ -46,11 +46,12 @@ public:
 
     // Spring types
     enum SpringType { 
-		STRUCTURAL = 0x1, 
-		SHEAR = 0x2,
-		BEND = 0x4,
-		EDGE = 0x5,
-		TORSION = 0x6,
+		STRUCTURAL = 0x0, 
+		SHEAR = 0x0,
+		EDGE = 0x2,
+		TORSION = 0x4,
+		BEND = 0x8
+
 
 											
 	}; 
