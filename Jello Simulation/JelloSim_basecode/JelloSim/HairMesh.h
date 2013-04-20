@@ -45,7 +45,15 @@ public:
     virtual unsigned int GetDrawFlags() const;
 
     // Spring types
-    enum SpringType { STRUCTURAL = 0x1, SHEAR = 0x2, BEND = 0x4 }; 
+    enum SpringType { 
+		STRUCTURAL = 0x1, 
+		SHEAR = 0x2,
+		BEND = 0x4,
+		EDGE = 0x5,
+		TORSION = 0x6,
+
+											
+	}; 
 
     int GetIndex(int i, int j, int k) const;
     void GetCell(int idx, int& i, int &j, int &k) const;
@@ -130,11 +138,17 @@ public:
     static double g_attachmentKd;
     static double g_shearKs;
     static double g_shearKd;
-    static double g_bendKs;
-    static double g_bendKd;
+
     static double g_penaltyKs;
     static double g_penaltyKd;
 
+	//Hair vars
+	static double g_torsionKs;
+	static double g_torsionKd;
+	static double g_edgeKs;
+	static double g_edgeKd;
+    static double g_bendKs;
+    static double g_bendKd;
 	
 	
 	//Threshold for determining if something is a collision or a contacr
@@ -177,10 +191,13 @@ protected:
         Spring& operator=(const Spring& p);
         Spring(SpringType t, int p1, int p2, 
             double Ks, double Kd, double restLen);
-
+		Spring(SpringType t, Particle& p1, Particle& p2, 
+            double Ks, double Kd, double restLen); 
         SpringType m_type;
         int m_p1;
         int m_p2;
+		Particle p1;
+		Particle p2;
         double m_Ks;
         double m_Kd;
         double m_restLen;
@@ -216,8 +233,9 @@ protected:
 	void updateVelocity(double dt);
 	void extrapolateVelocity(double dt);
 
-
-
+	void AddTorsionSpring(Particle& p1, Particle& p2);
+	void AddEdgeSpring(Particle& p1, Particle& p2);
+	void DrawHairSprings();
 
 
 	typedef std::vector<Particle> ParticleList;

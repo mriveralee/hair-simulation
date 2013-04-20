@@ -17,6 +17,16 @@ double HairMesh::friction_Amp = 2;
 double HairMesh::COLLISION_THRESHOLD = 0.01; 
 double HairMesh::jelloStartY = 1.3; //0.0
 
+//Da Hair Vars
+double HairMesh::g_torsionKs = 0.0;
+double HairMesh::g_torsionKd = 0.0;
+double HairMesh::g_edgeKs = 0.0;
+double HairMesh::g_edgeKd = 0.0;
+
+
+
+
+
 
 bool SHOULD_DRAW_HAIR = true;
 // TODO
@@ -185,6 +195,21 @@ void HairMesh::AddShearSpring(HairMesh::Particle& p1, HairMesh::Particle& p2)
     double restLen = (p1.position - p2.position).Length();
     m_vsprings.push_back(Spring(SHEAR, p1.index, p2.index, g_shearKs, g_shearKd, restLen));
 }
+
+
+void HairMesh::AddTorsionSpring(HairMesh::Particle& p1, HairMesh::Particle& p2)
+{
+    double restLen = (p1.position - p2.position).Length();
+    m_vsprings.push_back(Spring(SHEAR, p1.index, p2.index, g_shearKs, g_shearKd, restLen));
+}
+
+void HairMesh::AddEdgeSpring(HairMesh::Particle& p1, HairMesh::Particle& p2)
+{
+    double restLen = (p1.position - p2.position).Length();
+    m_vsprings.push_back(Spring(SHEAR, p1.index, p2.index, g_shearKs, g_shearKd, restLen));
+}
+
+
 
 void HairMesh::SetIntegrationType(HairMesh::IntegrationType type)
 {
@@ -937,6 +962,11 @@ HairMesh::Spring::Spring(HairMesh::SpringType t,
 {
 }
 
+
+
+HairMesh::Spring::Spring(SpringType t, Particle& p1, Particle& p2, 
+            double Ks, double Kd, double restLen) : m_type(t), m_Ks(Ks), m_Kd(Kd), p1(p1), p2(p2), m_restLen(restLen) {
+}
 //---------------------------------------------------------------------
 // Particle
 //---------------------------------------------------------------------
@@ -1401,6 +1431,38 @@ void HairMesh::DrawHair() {
 
 
 }
+
+void HairMesh::DrawHairSprings() {
+	//Edge Springs
+	const ParticleGrid& g = m_vparticles;
+    glBegin(GL_LINES);
+    for (unsigned int i = 0; i < m_vsprings.size(); i++)
+    {
+        if (!(m_vsprings[i].m_type & m_drawflags)) continue;
+        if (isInterior(m_vsprings[i])) continue;
+
+        switch (m_vsprings[i].m_type)
+        {
+        case BEND:       glColor4f(1.0, 1.0, 0.0, 1.0); break;
+		case EDGE:		 glColor4f(0.4, 0.4, 1.0, 1.0); break;
+		case TORSION:	 glColor4f(1.0, 0.4, 0.4, 1.0); break;
+        };
+
+        vec3 p1 = (m_vsprings[i].p1).position;
+		vec3 p2 = (m_vsprings[i].p2).position;
+
+		//TODO: DO CORRENT DRAWING / ORGANIZE on EB
+        glVertex3f(p2[0], p2[1], p2[2]);
+    }
+    glEnd();
+
+
+	//Torsion Springs
+
+	//Bend Springs
+
+}
+
 
 void HairMesh::DrawHairParticles() {
 	glDisable(GL_LIGHTING);
