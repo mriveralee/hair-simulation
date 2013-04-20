@@ -6,6 +6,7 @@
 #include "vec.h"
 #include "World.h"
 
+
 class HairMesh
 {
 public:
@@ -44,17 +45,20 @@ public:
     virtual void SetDrawFlags(unsigned int flags);
     virtual unsigned int GetDrawFlags() const;
 
+
     // Spring types
     enum SpringType { 
-		STRUCTURAL = 0x1, 
-		SHEAR = 0x0,
-		EDGE = 0x2,
-		TORSION = 0x4,
-		BEND = 0x8
+		STRUCTURAL = 0x01, 
+		SHEAR = 0x01,
+		EDGE = 0x02,
+		TORSION = 0x04,
+		BEND = 0x08
 
 
 											
 	}; 
+	
+
 
     int GetIndex(int i, int j, int k) const;
     void GetCell(int idx, int& i, int &j, int &k) const;
@@ -141,6 +145,7 @@ public:
 
     static double g_penaltyKs;
     static double g_penaltyKd;
+	bool SHOULD_DRAW_HAIR;
 
 
 	

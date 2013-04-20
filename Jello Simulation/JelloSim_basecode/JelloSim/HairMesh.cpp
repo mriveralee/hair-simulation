@@ -28,15 +28,16 @@ double HairMesh::g_edgeKd = 0.0;
 
 
 
-bool SHOULD_DRAW_HAIR = true;
+
 // TODO
 double HairMesh::g_attachmentKs = 0.000;
 double HairMesh::g_attachmentKd = 0.000;
 
 HairMesh::HairMesh() :     
-    m_integrationType(HairMesh::RK4), m_drawflags(MESH | STRUCTURAL),
+    m_integrationType(HairMesh::RK4), m_drawflags(MESH | SHOULD_DRAW_HAIR),
     m_cols(0), m_rows(0), m_stacks(0), m_width(0.0), m_height(0.0), m_depth(0.0)
 {
+	SHOULD_DRAW_HAIR = true;
     SetSize(1.0, 1.0, 1.0);
     SetGridSize(6, 6, 6);
 }
@@ -330,11 +331,10 @@ void HairMesh::Draw(const vec3& eyePos)
     if (m_drawflags & NORMALS) DrawCollisionNormals();
     if (m_drawflags & FORCES) DrawForces();
 
-	if (SHOULD_DRAW_HAIR) {
-		DrawHair(); 
-		DrawHairParticles();
-		DrawHairSprings();
-	}
+
+	DrawHair(); 
+	DrawHairParticles();
+	DrawHairSprings();
 
     glEnable(GL_LIGHTING);
 
@@ -1298,6 +1298,7 @@ HairMesh::GhostParticle& HairMesh::GhostParticle::operator=(const HairMesh::Ghos
 //###################################################
 void HairMesh::InitHairMesh()
 {
+
 	HAIR_SPRINGS.clear();
 
 	//##########################################################
@@ -1341,53 +1342,35 @@ void HairMesh::InitHairMesh()
 			int p1 = pNum+2;
 
 			//Add the Edge Springs
-			AddEdgeSpring(sNum, pNum, sNum, pG); //first to ghost
+			AddEdgeSpring(sNum, p0, sNum, pG); //first to ghost
 			AddEdgeSpring(sNum, pG, sNum, p1);   //ghost to second
 			AddEdgeSpring(sNum, p0, sNum, p1);   //first to second
 		}
-
 		//////////////////////////
 		// Add Torsion Springs ///
 		//////////////////////////
-		for (unsigned int pNum = 0; pNum < hairParticles.size()-2; pNum+=2 ) {
+		for (unsigned int pNum = 0; pNum < hairParticles.size()-3; pNum++ ) {
 			
 			//Current Particle index in a strand (Normal)
 			int p0 = pNum;
 			
 			//Next  particle index in the strand (Ghost)
-			int pG = pNum+1;
+			int p1 = pNum+3;
 			
-			//Second Next index Particle in the strand (Normal)
-			int p1 = pNum+2;
-
 			//Add the Torsion Springs
-			AddTorsionSpring(sNum, pNum, sNum, pG); //first to ghost
-			AddTorsionSpring(sNum, pG, sNum, p1);   //ghost to second
-			AddTorsionSpring(sNum, p0, sNum, p1);   //first to second
+			AddTorsionSpring(sNum, p0, sNum, p1); //first to ghost
 		}
-
 		///////////////////////
 		// Add Bend Springs ///
 		///////////////////////
-		for (unsigned int pNum = 0; pNum < hairParticles.size()-2; pNum+=2 ) {
-			
+		for (unsigned int pNum = 0; pNum < hairParticles.size()-4; pNum+=2 ) {
 			//Current Particle index in a strand (Normal)
 			int p0 = pNum;
-			
 			//Next  particle index in the strand (Ghost)
-			int pG = pNum+1;
-			
-			//Second Next index Particle in the strand (Normal)
-			int p1 = pNum+2;
-
-			//Add the Torsion Springs
-			AddTorsionSpring(sNum, pNum, sNum, pG); //first to ghost
-			AddTorsionSpring(sNum, pG, sNum, p1);   //ghost to second
-			AddTorsionSpring(sNum, p0, sNum, p1);   //first to second
+			int p1 = pNum+4;
+			//Add the Bend Springs
+			AddBendSpring(sNum, p0, sNum, p1);   //first to second
 		}
-
-
-
 	}
 
 }
@@ -1440,50 +1423,56 @@ void HairMesh::AddBendSpring(int s1, int p1, int s2, int p2)
 //######################### DRAW HAIR ######################
 //##########################################################
 void HairMesh::DrawHair() {
-	//return;
-	glDisable(GL_LIGHTING);
+	//return;	
+	//if (!SHOULD_DRAW_HAIR) return;
+	if (SHOULD_DRAW_HAIR) {
+		glDisable(GL_LIGHTING);
 
-    glBegin(GL_LINES);
-    glColor3f(0.0, 0.0, 0.0);
+		glBegin(GL_LINES);
+		glColor3f(0.0, 0.0, 0.0);
 
-    HairStrandList& strandList = this->StrandList;
-    for (unsigned int i = 0; i < strandList.size(); i++) {
-		//Get current Strand
-		const HairStrand strand = strandList.getStrand(i);
+		HairStrandList& strandList = this->StrandList;
+		for (unsigned int i = 0; i < strandList.size(); i++) {
+			//Get current Strand
+			const HairStrand strand = strandList.getStrand(i);
 
-		//Get Particles for a strand
-		const HairMesh::ParticleList hairParticles = strand.strandParticles;
-		for (unsigned int k = 0; k <  (hairParticles.size()/2); k++) {
+			//Get Particles for a strand
+			const HairMesh::ParticleList hairParticles = strand.strandParticles;
+			for (unsigned int k = 0; k <  (hairParticles.size()/2); k++) {
 			
-			//Current Particle in a strand
-			const Particle p0 = hairParticles[k*2];
-			//Next particle in the strand
-			const Particle p1 = hairParticles[k*2+2];
-
-			//Create vertices for each particle to draw a line between them
-			glVertex3f(p0.position[0], p0.position[1], p0.position[2]);
-            glVertex3f(p1.position[0], p1.position[1], p1.position[2]);
+				//Current Particle in a strand
+				const Particle p0 = hairParticles[k*2];
+				//Next particle in the strand
+				const Particle p1 = hairParticles[k*2+2];
+	
+				//Create vertices for each particle to draw a line between them
+				glVertex3f(p0.position[0], p0.position[1], p0.position[2]);
+				glVertex3f(p1.position[0], p1.position[1], p1.position[2]);
+			}
 		}
-    }
 
-    glEnd();
-    glEnable(GL_LIGHTING);
+		glEnd();
+		glEnable(GL_LIGHTING);
+	}
 
 
 }
 
 void HairMesh::DrawHairSprings() {
+	glDisable(GL_LIGHTING);
     glBegin(GL_LINES);
+	glClearColor(0,0,0,0);
+	glColor3f(0.0, 1.0, 0.0);
     for (unsigned int i = 0; i < HAIR_SPRINGS.size(); i++)
     {	
 		Spring currSpring = HAIR_SPRINGS[i];
         if (!(currSpring.m_type & m_drawflags)) continue;
 
         switch (currSpring.m_type)
-        {
-        case BEND:       glColor4f(1.0, 1.0, 0.0, 1.0); break;
-		case EDGE:		 glColor4f(0.4, 0.4, 1.0, 1.0); break;
-		case TORSION:	 glColor4f(1.0, 0.4, 0.4, 1.0); break;
+        { 
+        case BEND:       glColor3f(1.0, 0.4, 0.7); break;
+		case EDGE:		 glColor3f(0.0, 1.0, 1.0); break;
+		case TORSION:	 glColor3f(0.0, 1.0, 0.4); break;
         };
 
 		int sIndex1 = currSpring.m_s1;
@@ -1501,6 +1490,7 @@ void HairMesh::DrawHairSprings() {
         glVertex3f(p2[0], p2[1], p2[2]);
     }
     glEnd();
+	glEnable(GL_LIGHTING);
 
 }
 
@@ -1775,13 +1765,6 @@ void HairMesh::HairStrand::InitStrand()
 		}
 
 	}
-
-    // Setup structural springs
-    ParticleList& list = strandParticles;
-	for (unsigned int i = 0; i < numTotalParticles; i++) {
-		// TODO: ADD SPRINGS (see InitHairMesh)
-		//cout << list[i].position << endl;
-    }
 }
 
 void HairMesh::HairStrand::InitStrand(double angle)

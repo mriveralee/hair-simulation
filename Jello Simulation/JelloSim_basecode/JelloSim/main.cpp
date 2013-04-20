@@ -153,7 +153,7 @@ void onKeyboardCb(unsigned char key, int x, int y)
    else if (key == '=') isRunning = false;
    else if (key == '<') theHair.Reset();
    else if (key == 'r') isRecording = !isRecording; if (isRecording) theFrameNum = 0;
-  // else if (key == '1') mask = theHair.MESH;
+   else if (key == '1') theHair.SHOULD_DRAW_HAIR = !(theHair.SHOULD_DRAW_HAIR);
    else if (key == '2') mask = theHair.FORCES;
    else if (key == '3') mask = theHair.NORMALS;
    //else if (key == '4') mask = theHair.STRUCTURAL;
