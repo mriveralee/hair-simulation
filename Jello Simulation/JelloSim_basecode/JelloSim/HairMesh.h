@@ -78,7 +78,6 @@ protected:
 
     virtual void InitHairMesh();
     virtual void AddStructuralSpring(Particle& p1, Particle& p2);
-    virtual void AddBendSpring(Particle& p1, Particle& p2);
     virtual void AddShearSpring(Particle& p1, Particle& p2);
 
     class Intersection;
@@ -142,13 +141,7 @@ public:
     static double g_penaltyKs;
     static double g_penaltyKd;
 
-	//Hair vars
-	static double g_torsionKs;
-	static double g_torsionKd;
-	static double g_edgeKs;
-	static double g_edgeKd;
-    static double g_bendKs;
-    static double g_bendKd;
+
 	
 	
 	//Threshold for determining if something is a collision or a contacr
@@ -189,15 +182,23 @@ protected:
         Spring();
         Spring(const Spring& p);
         Spring& operator=(const Spring& p);
-        Spring(SpringType t, int p1, int p2, 
-            double Ks, double Kd, double restLen);
-		Spring(SpringType t, Particle& p1, Particle& p2, 
+       // Spring(SpringType t, int p1, int p2, double Ks, double Kd, double restLen);
+		
+		//HAIR SPRING CONSTRUCTOR 
+		//Spring(SpringType t, Particle& pt1, Particle& pt2, 
+  //          double Ks, double Kd, double restLen); 
+		Spring(SpringType t, int s1, int pt1, int s2, int pt2, 
             double Ks, double Kd, double restLen); 
-        SpringType m_type;
+		SpringType m_type;
+
+		//First Strand & Point index reference
+		int m_s1;
+		int m_p2;
+		//Second Strand & Point Index Reference 
+		int m_s2;
         int m_p1;
-        int m_p2;
-		Particle p1;
-		Particle p2;
+
+
         double m_Ks;
         double m_Kd;
         double m_restLen;
@@ -223,7 +224,7 @@ protected:
 //##############  HAIR STRANDS YO ##################
 //##################################################
 protected:
-	///Update Functions
+	///HAIR Update Functions
 	void ComputeHairForces(double dt);
 	void applyStrainLimiting(double dt);
 	void applySelfRepulsions(double dt);
@@ -233,11 +234,26 @@ protected:
 	void updateVelocity(double dt);
 	void extrapolateVelocity(double dt);
 
-	void AddTorsionSpring(Particle& p1, Particle& p2);
-	void AddEdgeSpring(Particle& p1, Particle& p2);
-	void DrawHairSprings();
+	//Get particle by strand and particle index
+	Particle& GetParticleInStrand(int sNum, int pNum);
 
 
+	//HAIR SPRINGS 
+	static double g_torsionKs;
+	static double g_torsionKd;
+	static double g_edgeKs;
+	static double g_edgeKd;
+    static double g_bendKs;
+    static double g_bendKd;
+	std::vector<Spring> HAIR_SPRINGS;
+	
+	virtual void AddTorsionSpring(int s1, int p1, int s2, int p2);
+	virtual void AddEdgeSpring(int s1, int p1, int s2, int p2);
+	virtual void AddBendSpring(int s1, int p1, int s2, int p2);
+
+    void DrawHairSprings();
+
+	// Particle List Definition
 	typedef std::vector<Particle> ParticleList;
 	void DrawHair();
 	void DrawHairParticles();
@@ -253,8 +269,6 @@ protected:
         GhostParticle& operator=(const GhostParticle& p);
 	    GhostParticle(int idx, const vec3& pos, const vec3& vel = vec3(0,0,0), double m = 1);
 	};
-
-
 
 	//##############################
 	//### Hair Strand Definition ###
