@@ -786,6 +786,7 @@ void HairMesh::MidPointIntegrate(double dt)
 
 void HairMesh::RK4Integrate(double dt)
 {
+	//TODO: DO RK4 for STICTION PARTICLE
 	double halfdt = 0.5 * dt;
 
 	HairStrandList& source = StrandList;	//Ptr
@@ -1665,6 +1666,8 @@ void HairMesh::ComputeHairForces(HairStrandList& strands, double dt) {
 		a.force += Fs + Fd;
 		b.force += -1*(Fs+Fd);
     }
+
+	//TODO: COMPUTE FORCES FOR STICTION PARTICLES
 }
 
 
@@ -1859,7 +1862,6 @@ void HairMesh::applyStiction() {
 		//pList2.emplace(pList2.begin() + stiction.segmentStartIndex2, p2);
 		pList2.push_back(p2);
 
-		//MAKE A STICTION PARTICLE WRAPPER STORE THEM IN A PLIST 
 
 		//Now add a Stiction Spring
 		this->AddStictionSpring(stiction.strandIndex1, stiction.segmentStartIndex1, stiction.strandIndex2, stiction.segmentStartIndex2);
