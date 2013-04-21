@@ -7,7 +7,7 @@ double HairMesh::g_structuralKs = 5000.000; //3k
 double HairMesh::g_structuralKd = 5.000; //10
 double HairMesh::g_shearKs = 4000.000; //4000
 double HairMesh::g_shearKd = 6.00; //10
-double HairMesh::g_penaltyKs = 6000.000; //5000
+double HairMesh::g_penaltyKs = 3000.000; //5000
 double HairMesh::g_penaltyKd = 320.000; //10
 
 double HairMesh::friction_Mk = 0.5;
@@ -16,15 +16,16 @@ double HairMesh::COLLISION_THRESHOLD = 0.01;
 double HairMesh::jelloStartY = 1.3; //0.0
 
 //Da Hair Vars
-double HairMesh::g_bendKs = 2000.0000; //3000
+double HairMesh::g_bendKs = 1000.0000; //3000
 double HairMesh::g_bendKd = 5.00; // 7
-double HairMesh::g_torsionKs = 4000.0;
+double HairMesh::g_torsionKs = 10000.0;
 double HairMesh::g_torsionKd = 5.0;
-double HairMesh::g_edgeKs = 1000.0;
+double HairMesh::g_edgeKs = 500.0;
 double HairMesh::g_edgeKd = 5.0;
 
 
-
+bool SHOULD_DRAW_HAIR_PARTICLES = false;
+bool SHOULD_DRAW_GHOST_PARTICLES = false;
 
 
 
@@ -1458,6 +1459,7 @@ void HairMesh::DrawHairSprings() {
 
 
 void HairMesh::DrawHairParticles() {
+	
 	glDisable(GL_LIGHTING);
 
 	glPointSize(6.0);
@@ -1473,7 +1475,8 @@ void HairMesh::DrawHairParticles() {
 		//Get Particles for a strand
 		const HairMesh::ParticleList hairParticles = strand.strandParticles;
 		for (unsigned int k = 0; k <  hairParticles.size(); k++) {
-			
+			if (!SHOULD_DRAW_HAIR_PARTICLES && k%2 == 0) return;
+			if (!SHOULD_DRAW_GHOST_PARTICLES && k%2 == 1) return;
 			//Current Particle in a strand
 			const Particle p0 = hairParticles[k];
 
@@ -1873,7 +1876,7 @@ void HairMesh::HairStrand::InitStrand(double angle)
 	strandParticles = ParticleList();
     // Init particles
 	float strandLength = 2.0f;
-	int numHairParticles = 8;
+	int numHairParticles = 32;
 	int numGhostParticles = numHairParticles - 1;
 	int numTotalParticles = numHairParticles + numGhostParticles;
 	float particleDistOffset = strandLength / numTotalParticles;

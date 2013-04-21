@@ -196,7 +196,8 @@ void onTimerCb(int value)
    if (isRunning) 
    {
        theHair.Update(0.01, theWorld); 
-       if (isRecording) grabScreen();
+       if (isRecording) 
+		   grabScreen();
    }
 
    glutPostRedisplay();
