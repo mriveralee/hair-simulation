@@ -1341,8 +1341,6 @@ void HairMesh::InitHairMesh()
 				int p1 = pNum+2;
 				//Add the Bend Springs
 				AddBendSpring(sNum, p0, sNum, p1);   //first to second
-			
-
 			}
 		}
 	}
