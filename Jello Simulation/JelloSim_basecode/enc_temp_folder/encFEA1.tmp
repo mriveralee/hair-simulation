@@ -144,6 +144,9 @@ public:
     static double g_shearKs;
     static double g_shearKd;
 
+    static double g_penaltyKs;
+    static double g_penaltyKd;
+	bool SHOULD_DRAW_HAIR;
 
 
 	
@@ -169,14 +172,14 @@ protected:
         Particle();
         Particle(const Particle& p);
         Particle& operator=(const Particle& p);
-        Particle(int idx, const vec3& pos, const vec3& vel = vec3(0,0,0), double m = 1, bool isTemp=false);
+        Particle(int idx, const vec3& pos, const vec3& vel = vec3(0,0,0), double m = 1);
 
         int index;
         vec3 position;
         vec3 velocity;
         vec3 force;
         double mass;
-		bool isTemporary;
+
         static Particle EMPTY;
     };
 
@@ -228,11 +231,7 @@ protected:
 //##################################################
 //##############  HAIR STRANDS YO ##################
 //##################################################
-public:
-	bool SHOULD_DRAW_HAIR;
 protected:
-	class Stiction;
-	class StictionParticle;
 	///HAIR Update Functions
 	void applyStrainLimiting(double dt);
 	void applySelfRepulsions(double dt);
@@ -251,10 +250,7 @@ protected:
 
 	//Get particle by strand and particle index
 	Particle& GetParticleInStrand(int sNum, int pNum);
-	StictionParticle& GetStictionParticleInStrand(int sNum, int pNum);
 
-
-	
 
 	//HAIR SPRINGS 
 	static double g_torsionKs;
@@ -263,28 +259,20 @@ protected:
 	static double g_edgeKd;
     static double g_bendKs;
     static double g_bendKd;
-	static double g_stictionKs;
-    static double g_stictionKd;
-	static double g_penaltyKs;
-    static double g_penaltyKd;
-
 	std::vector<Spring> HAIR_SPRINGS;
 
 	std::vector<Intersection> HAIR_CONTACTS;
     std::vector<Intersection> HAIR_COLLISIONS;
-	std::vector<Stiction> HAIR_STICTIONS;
+	std::vector<Intersection> HAIR_STICTIONS;
 	
 	virtual void AddTorsionSpring(int s1, int p1, int s2, int p2);
 	virtual void AddEdgeSpring(int s1, int p1, int s2, int p2);
 	virtual void AddBendSpring(int s1, int p1, int s2, int p2);
-	virtual void AddStictionSpring(int s1, int p1, int s2, int p2);
 
     void DrawHairSprings();
 
 	// Particle List Definition
-	class StictionParticle;
 	typedef std::vector<Particle> ParticleList;
-	typedef std::vector<StictionParticle> StictionParticleList;
 	void DrawHair();
 	void DrawHairParticles();
 
@@ -298,22 +286,6 @@ protected:
         GhostParticle(const GhostParticle& p);
         GhostParticle& operator=(const GhostParticle& p);
 	    GhostParticle(int idx, const vec3& pos, const vec3& vel = vec3(0,0,0), double m = 1);
-	};
-	//#################################
-	//####### Stiction Particle #######
-	//#################################
-	class StictionParticle : public Particle
-    {
-    public:
-        StictionParticle();
-        StictionParticle(const StictionParticle& p);
-        StictionParticle& operator=(const StictionParticle& p);
-	    StictionParticle(int s1, int p1, const vec3& pos, int s2, int p2, const vec3& vel = vec3(0,0,0), double m = 1);
-		int m_s1;
-		int m_p1;
-		int m_s2;
-		int m_p2;
-		
 	};
 
 	//##############################
@@ -346,7 +318,7 @@ protected:
 			
 			
 			ParticleList strandParticles;
-			StictionParticleList stictionParticles;
+
 
 			static HairStrand EMPTY;
 	};
@@ -367,8 +339,6 @@ protected:
 			void addStrand(HairStrand s);
 
 			HairMesh::Particle& getParticleInStrand(int sNum, int pNum);
-			HairMesh::StictionParticle& getStictionParticleInStrand(int sNum, int pNum);
-
 			int size();
 	};
 		
@@ -385,14 +355,12 @@ protected:
 		Stiction();
 		Stiction(const Stiction& p);
 		Stiction& operator=(const Stiction& p);
-		Stiction(IntersectionType type, int p, const vec3& normal, double d, int s1, int start1, int s2, int start2, vec3 cp1, vec3 cp2);
+		Stiction(IntersectionType type, int p, const vec3& normal, double d, int s1, int start1, int s2, int start2);
 
 		int strandIndex1;
 		int segmentStartIndex1;
 		int strandIndex2;
 		int segmentStartIndex2;
-		vec3 p1;
-		vec3 p2;
 	};
 
 };

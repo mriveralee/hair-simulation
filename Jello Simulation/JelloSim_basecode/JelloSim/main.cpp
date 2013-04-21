@@ -75,7 +75,6 @@ void grabScreen()
     char anim_filename[2048];
     sprintf_s(anim_filename, 2048, "output/%04d.png", theFrameNum++); 
 
-
     ilSave(IL_PNG, anim_filename);
 
     error = ilGetError();
