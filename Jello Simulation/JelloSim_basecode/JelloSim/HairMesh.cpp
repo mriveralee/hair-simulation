@@ -359,6 +359,7 @@ void HairMesh::Update(double dt, const World& world, const vec3& externalForces)
 //	CheckForCollisions(m_vparticles, world);
 
 	ComputeHairForces(StrandList, dt);
+	ResolveHairContacts();
 //	ResolveContacts(m_vparticles);
 //	ResolveCollisions(m_vparticles);
 
@@ -367,62 +368,63 @@ void HairMesh::Update(double dt, const World& world, const vec3& externalForces)
 
 void HairMesh::CheckForCollisions(ParticleGrid& grid, const World& world)
 {
-    m_vcontacts.clear();
-    m_vcollisions.clear();
+    //m_vcontacts.clear();
+    //m_vcollisions.clear();
 
-    for (int i = 0; i < m_rows+1; i++)
-    {
-        for (int j = 0; j < m_cols+1; j++)
-        {
-            for (int k = 0; k < m_stacks+1; k++)
-            {
-                Particle& p = GetParticle(grid, i,j,k);
+    //for (int i = 0; i < m_rows+1; i++)
+    //{
+    //    for (int j = 0; j < m_cols+1; j++)
+    //    {
+    //        for (int k = 0; k < m_stacks+1; k++)
+    //        {
+    //            Particle& p = GetParticle(grid, i,j,k);
+				//int strand = -1;
 
-                // 1. Check collisions with world objects 
-                for (unsigned int i = 0; i < world.m_shapes.size(); i++)
-                {
-                    Intersection intersection;
+    //            // 1. Check collisions with world objects 
+    //            for (unsigned int i = 0; i < world.m_shapes.size(); i++)
+    //            {
+    //                Intersection intersection;
 
-                    if (world.m_shapes[i]->GetType() == World::CYLINDER && 
-                        CylinderIntersection(p, (World::Cylinder*) world.m_shapes[i], intersection))
-                    {
-						if (intersection.m_type == IntersectionType::CONTACT) 
-						{
-							m_vcontacts.push_back(intersection);
-						}
-						else if (intersection.m_type == IntersectionType::COLLISION) 
-						{
-							m_vcollisions.push_back(intersection);
-						}
-                    }
-                    else if (world.m_shapes[i]->GetType() == World::GROUND && 
-                        FloorIntersection(p, intersection))
-                    {	
-						if (intersection.m_type == IntersectionType::CONTACT) 
-						{
-							m_vcontacts.push_back(intersection);
-						}
-						else if (intersection.m_type == IntersectionType::COLLISION) 
-						{
-							m_vcollisions.push_back(intersection);
-						}
-                    }
-					else if (world.m_shapes[i]->GetType() == World::SPHERE &&
-						SphereIntersection(p, (World::Sphere*) world.m_shapes[i], intersection))
-					{
-						if (intersection.m_type == IntersectionType::CONTACT) 
-						{
-							m_vcontacts.push_back(intersection);
-						}
-						else if (intersection.m_type == IntersectionType::COLLISION) 
-						{
-							m_vcollisions.push_back(intersection);
-						}
-					}
-                }
-            }
-        }
-    }
+    //                if (world.m_shapes[i]->GetType() == World::CYLINDER && 
+    //                    CylinderIntersection(p, (World::Cylinder*) world.m_shapes[i], intersection))
+    //                {
+				//		if (intersection.m_type == IntersectionType::CONTACT) 
+				//		{
+				//			m_vcontacts.push_back(intersection);
+				//		}
+				//		else if (intersection.m_type == IntersectionType::COLLISION) 
+				//		{
+				//			m_vcollisions.push_back(intersection);
+				//		}
+    //                }
+    //                else if (world.m_shapes[i]->GetType() == World::GROUND && 
+    //                    FloorIntersection(p, -1, intersection))
+    //                {	
+				//		if (intersection.m_type == IntersectionType::CONTACT) 
+				//		{
+				//			m_vcontacts.push_back(intersection);
+				//		}
+				//		else if (intersection.m_type == IntersectionType::COLLISION) 
+				//		{
+				//			m_vcollisions.push_back(intersection);
+				//		}
+    //                }
+					//	else if (world.m_shapes[i]->GetType() == World::SPHERE &&
+				//		SphereIntersection(p, strand, (World::Sphere*) world.m_shapes[i], intersection))
+				//	{
+				//		if (intersection.m_type == IntersectionType::CONTACT) 
+				//		{
+				//			m_vcontacts.push_back(intersection);
+				//		}
+				//		else if (intersection.m_type == IntersectionType::COLLISION) 
+				//		{
+				//			m_vcollisions.push_back(intersection);
+				//		}
+				//	}
+    //            }
+    //        }
+    //    }
+    //}
 }
 
 void HairMesh::ComputeForces(ParticleGrid& grid)
@@ -516,7 +518,7 @@ void HairMesh::ResolveCollisions(ParticleGrid& grid)
 	}
 }
 
-bool HairMesh::FloorIntersection(Particle& p, Intersection& intersection)
+bool HairMesh::FloorIntersection(Particle& p, int strandIndex, Intersection& intersection)
 {
 		vec3 X = p.position;		//Particle Position
 		double pY = X[1];
@@ -537,6 +539,7 @@ bool HairMesh::FloorIntersection(Particle& p, Intersection& intersection)
 		if (0 <= pY && pY <= COLLISION_THRESHOLD) {
 			//cout << "Floor Collision\n";
 			intersection.m_p = p.index;
+			intersection.m_strand = strandIndex;
 			intersection.m_distance = fabs(COLLISION_THRESHOLD-pY);			//Distance from top of the collision threshold
 			intersection.m_type = IntersectionType::COLLISION;
 			intersection.m_normal = N;
@@ -547,6 +550,7 @@ bool HairMesh::FloorIntersection(Particle& p, Intersection& intersection)
 		else if (pY < 0) {
 			//cout<< "Floor Contact\n";
 			intersection.m_p = p.index;
+			intersection.m_strand = strandIndex;
 			intersection.m_distance = fabs(0.0-pY);							//Distance from the surface
 			intersection.m_type = IntersectionType::CONTACT;
 			intersection.m_normal = N;
@@ -557,8 +561,8 @@ bool HairMesh::FloorIntersection(Particle& p, Intersection& intersection)
 }
 
 
-bool HairMesh::SphereIntersection(Particle& p, World::Sphere* sphere, Intersection& intersection) {
-	
+bool HairMesh::SphereIntersection(Particle& p, int strandIndex, int particleIndex, World::Sphere* sphere, Intersection& intersection) {
+	//cout << "strandIndex within sphere intersection: " << strandIndex << endl;
 	vec3 s = sphere->pos;
 	double radius = sphere->r; 
 	vec3 x = p.position;
@@ -576,7 +580,8 @@ bool HairMesh::SphereIntersection(Particle& p, World::Sphere* sphere, Intersecti
 	if (0.0 <= aLength && aLength <= radius) {
 		//Contact in sphere
 		intersection.m_type = IntersectionType::CONTACT;
-		intersection.m_p = p.index;
+		intersection.m_p = particleIndex;
+		intersection.m_strand = strandIndex;
 		intersection.m_normal = N;
 		intersection.m_distance = R.Length()-aLength;
 		return true;
@@ -584,7 +589,8 @@ bool HairMesh::SphereIntersection(Particle& p, World::Sphere* sphere, Intersecti
 	else if (radius < aLength && aLength < radius+COLLISION_THRESHOLD) {
 		//In threshold right above surface
 		intersection.m_type = IntersectionType::COLLISION;
-		intersection.m_p = p.index;
+		intersection.m_p = particleIndex;
+		intersection.m_strand = strandIndex;
 		intersection.m_normal = N;
 		intersection.m_distance = (radius+COLLISION_THRESHOLD)-aLength;
 		return true;
@@ -959,12 +965,12 @@ HairMesh::Particle& HairMesh::Particle::operator=(const HairMesh::Particle& p)
 //---------------------------------------------------------------------
 
 HairMesh::Intersection::Intersection() : 
-	m_p(-1), m_normal(0,0,0), m_distance(0) , m_type(CONTACT) , m_ground_friction(0.0)
+	m_p(-1), m_normal(0,0,0), m_distance(0) , m_type(CONTACT) , m_ground_friction(0.0), m_strand(0)
 {
 }
 
 HairMesh::Intersection::Intersection(const HairMesh::Intersection& p) :
-	m_p(p.m_p), m_normal(p.m_normal), m_distance(p.m_distance), m_type(p.m_type), m_ground_friction(p.m_ground_friction)
+m_p(p.m_p), m_normal(p.m_normal), m_distance(p.m_distance), m_type(p.m_type), m_ground_friction(p.m_ground_friction), m_strand(p.m_strand)
 {
 }
 
@@ -976,6 +982,7 @@ HairMesh::Intersection& HairMesh::Intersection::operator=(const HairMesh::Inters
     m_distance = p.m_distance;
     m_type = p.m_type;
 	m_ground_friction = p.m_ground_friction;
+	m_strand = p.m_strand;
     return *this;
 }
 
@@ -1252,6 +1259,8 @@ void HairMesh::InitHairMesh()
 {
 
 	HAIR_SPRINGS.clear();
+	HAIR_CONTACTS.clear();
+	HAIR_COLLISIONS.clear();
 
 	//##########################################################
 	//#################### HAIR INITIALIZATION #################
@@ -1481,18 +1490,18 @@ void HairMesh::applySelfRepulsions(double dt) {
 }
 
 void HairMesh::updatePosition(double dt) {
-	for (unsigned int i = 0; i < StrandList.size(); i++) {
-		//Current Strand
-		HairStrand& strand = StrandList.getStrand(i);
-		//Strand Particles
-		ParticleList& particles = strand.strandParticles;
-		//Loop through and apple forces
-		for (unsigned int j = 0; j < particles.size(); j++) {
-			if (j == 0) continue; //RootParticle
-			Particle& p = particles[j];
-			p.position += (dt)*p.velocity;
-		}
-	}
+	//for (unsigned int i = 0; i < StrandList.size(); i++) {
+	//	//Current Strand
+	//	HairStrand& strand = StrandList.getStrand(i);
+	//	//Strand Particles
+	//	ParticleList& particles = strand.strandParticles;
+	//	//Loop through and apple forces
+	//	for (unsigned int j = 0; j < particles.size(); j++) {
+	//		if (j == 0) continue; //RootParticle
+	//		Particle& p = particles[j];
+	//		p.position += (dt)*p.velocity;
+	//	}
+	//}
 
 }
 
@@ -1504,18 +1513,18 @@ void HairMesh::resolveSelfCollisions(double dt) {
 
 }
 void HairMesh::updateVelocity(double dt) {
-	for (unsigned int i = 0; i < StrandList.size(); i++) {
-		//Current Strand
-		HairStrand& strand = StrandList.getStrand(i);
-		//Strand Particles
-		ParticleList& particles = strand.strandParticles;
-		//Loop through and apple forces
-		for (unsigned int j = 0; j < particles.size(); j++) {
-			Particle& p = particles[j];
-			p.velocity += (dt/2)*p.mass*p.force; // TODO what actually belongs from the paper
-			//cout<< p.velocity << endl;
-		}
-	}
+	//for (unsigned int i = 0; i < StrandList.size(); i++) {
+	//	//Current Strand
+	//	HairStrand& strand = StrandList.getStrand(i);
+	//	//Strand Particles
+	//	ParticleList& particles = strand.strandParticles;
+	//	//Loop through and apple forces
+	//	for (unsigned int j = 0; j < particles.size(); j++) {
+	//		Particle& p = particles[j];
+	//		p.velocity += (dt/2)*p.mass*p.force; // TODO what actually belongs from the paper
+	//		//cout<< p.velocity << endl;
+	//	}
+	//}
 
 }
 
@@ -1572,34 +1581,40 @@ void HairMesh::ComputeHairForces(HairStrandList& strands, double dt) {
 
 
 void HairMesh::CheckCollisions(const World& world) {
-    m_vcontacts.clear();
-    m_vcollisions.clear();
+    HAIR_CONTACTS.clear();
+    HAIR_COLLISIONS.clear();
 	
 	int totalNumStrands = StrandList.size();
 	//int totalNumParticles = 0;
-	for (int i = 0; i < totalNumStrands; i++) {
-		HairStrand strand = StrandList.getStrand(i);
+	for (unsigned int i = 0; i < totalNumStrands; i++) {
+		HairStrand& strand = StrandList.getStrand(i);
 		int numParticlesInStrand = strand.strandParticles.size();
+		int strandIndex = i;
+		//cout << "strand: " << strandIndex << endl;
 
-		for (int j = 0; j < numParticlesInStrand; j++) {
-			Particle& p = GetParticleInStrand(i,j);
+		for (unsigned int j = 0; j < numParticlesInStrand; j++) {
+			Particle p = GetParticleInStrand(i,j);
+			int particleIndex = j;
+			if (particleIndex % 2 == 1) continue; // skipping ghost particles
 
 			// 1. Check collisions with world objects 
-			for (int k = 0; k < world.m_shapes.size(); k++) {
-				Intersection intersection;
-
+			for (unsigned int k = 0; k < world.m_shapes.size(); k++) {
+				
+				Intersection intersection = Intersection();
+				//cout << "i before passing into sphere intersection" << i << endl;
 				if (world.m_shapes[k]->GetType() == World::SPHERE &&
-					SphereIntersection(p, (World::Sphere*) world.m_shapes[k], intersection))
+					SphereIntersection(p, i, j, (World::Sphere*) world.m_shapes[k], intersection))
 				{
 					//cout << "SPHEREEEE" << endl;
 					if (intersection.m_type == IntersectionType::CONTACT) {
-						m_vcontacts.push_back(intersection);
+						HAIR_CONTACTS.push_back(intersection);
+						//cout<<intersection.m_strand<<endl;
 					} else if (intersection.m_type == IntersectionType::COLLISION) {
-						m_vcollisions.push_back(intersection);
+						HAIR_COLLISIONS.push_back(intersection);
 					}
 				}
 				else if (world.m_shapes[k]->GetType() == World::GROUND && 
-					FloorIntersection(p, intersection))
+					FloorIntersection(p, i, intersection))
                 {
 					//cout << "FLOOOOOOR" << endl;
 					if (intersection.m_type == IntersectionType::CONTACT) {
@@ -1612,6 +1627,45 @@ void HairMesh::CheckCollisions(const World& world) {
 		} // ----------------END FOR j-----------------------------------
 	} // ----------------END FOR i-----------------------------------
 
+}
+
+void HairMesh::ResolveHairContacts() {
+
+	//CONTACTS - Penetration of the other object
+	for (unsigned int i = 0; i < HAIR_CONTACTS.size(); i++)
+    {		
+		//Con
+		const Intersection& result = HAIR_CONTACTS[i];
+		//cout << "when passed into resolveHairContacts: " << result.m_strand << endl;
+		Particle& p = GetParticleInStrand(result.m_strand, result.m_p);
+		double D = result.m_distance;	
+        vec3 N = result.m_normal;
+		vec3 unitN = N.Normalize();
+
+		//Apply impulse to velocity (directly reflect it across the normal) IF out velocity is moving downwards
+		vec3 V = p.velocity;
+		double VNorm = p.velocity*unitN;
+		//vec3 VTan = V-VNorm*unitN;
+		//Check if velocity ismoving downwards
+		//if(VNorm < 0.0) {
+			//Now reflect the velocity with a restituion (damping on velocity)
+			double kR = 0.5;
+			p.velocity = kR*(p.velocity-(2*unitN*(unitN*V)));
+			//p.velocity *= -1;
+			//Move point to the surface of the object it is currently in
+			vec3 distanceAdjust = D*unitN;
+			p.position = p.position+distanceAdjust;
+			
+			double kFriction = result.m_ground_friction;
+			if (kFriction > 0.0) {
+				//Kinectic Friction Force
+				//cout<<"Kinectic Friction";
+				p.force -= D*N/friction_Mk;
+			}
+
+		//}
+
+    }
 }
 
 //---------------------------------------------------------------------

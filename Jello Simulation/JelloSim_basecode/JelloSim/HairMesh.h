@@ -89,9 +89,9 @@ protected:
 	virtual void CheckForCollisions(ParticleGrid& grid, const World& world);
 	virtual void ResolveCollisions(ParticleGrid& grid);
 	virtual void ResolveContacts(ParticleGrid& grid);
-	virtual bool FloorIntersection(Particle& p, Intersection& intersection);
+	virtual bool FloorIntersection(Particle& p, int strandIndex, Intersection& intersection);
     virtual bool CylinderIntersection(Particle& p, World::Cylinder* cylinder, Intersection& intersection);
-	virtual bool SphereIntersection(Particle& p, World::Sphere* sphere, Intersection& intersection);
+	virtual bool SphereIntersection(Particle& p, int strandIndex, int particleIndex, World::Sphere* sphere, Intersection& intersection);
 
     virtual void ComputeForces(ParticleGrid& grid);
 	virtual void EulerIntegrate(double dt);
@@ -220,6 +220,7 @@ protected:
         Intersection(IntersectionType type, int p, const vec3& normal, double d = 0);
 
         int m_p;
+		int m_strand;
         vec3 m_normal;
         double m_distance;
         IntersectionType m_type;
@@ -240,6 +241,8 @@ protected:
 	void extrapolateVelocity(double dt);
 
 	void CheckCollisions(const World& world);
+	void ResolveHairContacts();
+
 
 	//Get particle by strand and particle index
 	Particle& GetParticleInStrand(int sNum, int pNum);
@@ -253,6 +256,9 @@ protected:
     static double g_bendKs;
     static double g_bendKd;
 	std::vector<Spring> HAIR_SPRINGS;
+
+	std::vector<Intersection> HAIR_CONTACTS;
+    std::vector<Intersection> HAIR_COLLISIONS;
 	
 	virtual void AddTorsionSpring(int s1, int p1, int s2, int p2);
 	virtual void AddEdgeSpring(int s1, int p1, int s2, int p2);
