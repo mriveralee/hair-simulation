@@ -144,9 +144,6 @@ public:
     static double g_shearKs;
     static double g_shearKd;
 
-    static double g_penaltyKs;
-    static double g_penaltyKd;
-	bool SHOULD_DRAW_HAIR;
 
 
 	
@@ -172,14 +169,14 @@ protected:
         Particle();
         Particle(const Particle& p);
         Particle& operator=(const Particle& p);
-        Particle(int idx, const vec3& pos, const vec3& vel = vec3(0,0,0), double m = 1);
+        Particle(int idx, const vec3& pos, const vec3& vel = vec3(0,0,0), double m = 1, bool isTemp=false);
 
         int index;
         vec3 position;
         vec3 velocity;
         vec3 force;
         double mass;
-
+		bool isTemporary;
         static Particle EMPTY;
     };
 
@@ -231,7 +228,10 @@ protected:
 //##################################################
 //##############  HAIR STRANDS YO ##################
 //##################################################
+public:
+	bool SHOULD_DRAW_HAIR;
 protected:
+	class Stiction;
 	///HAIR Update Functions
 	void applyStrainLimiting(double dt);
 	void applySelfRepulsions(double dt);
@@ -251,6 +251,7 @@ protected:
 	//Get particle by strand and particle index
 	Particle& GetParticleInStrand(int sNum, int pNum);
 
+	
 
 	//HAIR SPRINGS 
 	static double g_torsionKs;
@@ -259,15 +260,21 @@ protected:
 	static double g_edgeKd;
     static double g_bendKs;
     static double g_bendKd;
+	static double g_stictionKs;
+    static double g_stictionKd;
+	static double g_penaltyKs;
+    static double g_penaltyKd;
+
 	std::vector<Spring> HAIR_SPRINGS;
 
 	std::vector<Intersection> HAIR_CONTACTS;
     std::vector<Intersection> HAIR_COLLISIONS;
-	std::vector<Intersection> HAIR_STICTIONS;
+	std::vector<Stiction> HAIR_STICTIONS;
 	
 	virtual void AddTorsionSpring(int s1, int p1, int s2, int p2);
 	virtual void AddEdgeSpring(int s1, int p1, int s2, int p2);
 	virtual void AddBendSpring(int s1, int p1, int s2, int p2);
+	virtual void AddStictionSpring(int s1, int p1, int s2, int p2);
 
     void DrawHairSprings();
 

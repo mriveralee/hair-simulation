@@ -17,15 +17,20 @@ double HairMesh::jelloStartY = 1.3; //0.0
 
 //Da Hair Vars
 double HairMesh::g_bendKs = 1000.0000; //3000
-double HairMesh::g_bendKd = 5.00; // 7
-double HairMesh::g_torsionKs = 10000.0;
-double HairMesh::g_torsionKd = 5.0;
+double HairMesh::g_bendKd = 5.0; // 7
+
+double HairMesh::g_torsionKs = 1000.0;
+double HairMesh::g_torsionKd = 0.10;
+
 double HairMesh::g_edgeKs = 500.0;
 double HairMesh::g_edgeKd = 5.0;
 
+double HairMesh::g_stictionKs = 1000.0000;
+double HairMesh::g_stictionKd = 5.0;
 
-bool SHOULD_DRAW_HAIR_PARTICLES = false;
-bool SHOULD_DRAW_GHOST_PARTICLES = false;
+
+bool SHOULD_DRAW_HAIR_PARTICLES = true;
+bool SHOULD_DRAW_GHOST_PARTICLES = true;
 
 
 
@@ -933,20 +938,22 @@ HairMesh::Spring::Spring(HairMesh::SpringType t,
 
 HairMesh::Particle HairMesh::Particle::EMPTY;
 
-HairMesh::Particle::Particle(int idx, const vec3& p, const vec3& v, double m)
+HairMesh::Particle::Particle(int idx, const vec3& p, const vec3& v, double m, bool isTemp)
 {
     index = idx;
     position = p;
     velocity = v;
     force = vec3(0,0,0);
     mass = m;
+	isTemporary = isTemp;
 }
 HairMesh::Particle::Particle() : index(-1), position(0,0,0), velocity(0,0,0), force(0,0,0), mass(1.0)
 {
+	isTemporary = false;
 }
 
 HairMesh::Particle::Particle(const HairMesh::Particle& p) : 
-    index(p.index), position(p.position), velocity(p.velocity), force(p.force), mass(p.mass)
+index(p.index), position(p.position), velocity(p.velocity), force(p.force), mass(p.mass), isTemporary(p.isTemporary)
 {
 }
 
@@ -959,6 +966,7 @@ HairMesh::Particle& HairMesh::Particle::operator=(const HairMesh::Particle& p)
     velocity = p.velocity;
     force = p.force;
     mass = p.mass;
+	isTemporary = p.isTemporary;
     return *this;
 }
 
@@ -1363,7 +1371,7 @@ void HairMesh::AddTorsionSpring(int s1, int p1, int s2, int p2)
 	Particle& pt1 = GetParticleInStrand(s1, p1);
 	Particle& pt2 = GetParticleInStrand(s2, p2);
 	double restLen = (pt1.position - pt2.position).Length();
-    HAIR_SPRINGS.push_back(Spring(TORSION, s1, p1, s2, p2, g_shearKs, g_shearKd, restLen));
+    HAIR_SPRINGS.push_back(Spring(TORSION, s1, p1, s2, p2, g_torsionKs, g_torsionKd, restLen));
 }
 
 void HairMesh::AddEdgeSpring(int s1, int p1, int s2, int p2)
@@ -1371,7 +1379,7 @@ void HairMesh::AddEdgeSpring(int s1, int p1, int s2, int p2)
    Particle& pt1 = GetParticleInStrand(s1, p1);
    Particle& pt2 = GetParticleInStrand(s2, p2);
    double restLen = (pt1.position - pt2.position).Length();
-   HAIR_SPRINGS.push_back(Spring(EDGE, s1, p1, s2, p2, g_shearKs, g_shearKd, restLen));
+   HAIR_SPRINGS.push_back(Spring(EDGE, s1, p1, s2, p2, g_edgeKs, g_edgeKd, restLen));
 }
 
 void HairMesh::AddBendSpring(int s1, int p1, int s2, int p2)
@@ -1380,6 +1388,14 @@ void HairMesh::AddBendSpring(int s1, int p1, int s2, int p2)
 	Particle& pt2 = GetParticleInStrand(s2, p2);
 	double restLen = (pt1.position - pt2.position).Length();
     HAIR_SPRINGS.push_back(Spring(BEND, s1, p1, s2, p2, g_bendKs, g_bendKd, restLen));
+}
+
+void HairMesh::AddStictionSpring(int s1, int p1, int s2, int p2)
+{
+	Particle& pt1 = GetParticleInStrand(s1, p1);
+	Particle& pt2 = GetParticleInStrand(s2, p2);
+	double restLen = (pt1.position - pt2.position).Length();
+    HAIR_SPRINGS.push_back(Spring(STICTION, s1, p1, s2, p2, g_stictionKs, g_stictionKd, restLen));
 }
     
 
@@ -1482,8 +1498,8 @@ void HairMesh::DrawHairParticles() {
 			const Particle p0 = hairParticles[k];
 
 			// GHOST PARTICLES ARE ODD INDICES, HAIR PARTICLES ARE EVEN
-			if (k % 2 == 0) glColor3f(0.0, 1.0, 0.0);
-			else glColor3f(1.0, 0.0, 0.0);
+			if (k % 2 == 0) glColor4f(0.0, 1.0, 0.0, 1.0);
+			else glColor4f(1.0, 0.0, 0.0, 1.0);
 			//Create vertices for each particle to draw a line between them
 			glVertex3f(p0.position[0], p0.position[1], p0.position[2]);
 		}
@@ -1750,8 +1766,39 @@ void HairMesh::ResolveHairCollisions()
 }
 
 void HairMesh::applyStiction() {
+	for (unsigned int i = 0; i < HAIR_STICTIONS.size(); i++) {
+		//Current stiction
+		Stiction stiction = HAIR_STICTIONS[i];
+		//First Closest Particle - add stiction point
+		Particle p1 = Particle();
+		p1.position = stiction.p1;
+		p1.isTemporary = true;
+
+		//The first strand particle list
+		HairStrand& s1 = StrandList.getStrand(stiction.strandIndex1);
+		ParticleList& pList1 = s1.strandParticles;
+		
+		//Insert the first closest particle
+		pList1.emplace(pList1.begin() + stiction.segmentStartIndex1, p1);
 
 
+		//Second Closest Particles - add stiction point
+		Particle p2 = Particle();
+		p2.position = stiction.p2;
+		p2.isTemporary = true;
+
+		//The Second strand and particle list
+		HairStrand& s2 = StrandList.getStrand(stiction.strandIndex2);
+		ParticleList& pList2 = s2.strandParticles;
+		
+		//Insert the second closest particle
+		pList2.emplace(pList2.begin() + stiction.segmentStartIndex2, p2);
+		
+		//Now add a Stiction Spring
+		this->AddStictionSpring(stiction.strandIndex1, stiction.segmentStartIndex1, stiction.strandIndex2, stiction.segmentStartIndex2);
+	
+
+	}
 }
 
 //---------------------------------------------------------------------
