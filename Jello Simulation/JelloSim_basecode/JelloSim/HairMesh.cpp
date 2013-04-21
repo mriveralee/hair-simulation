@@ -22,20 +22,14 @@ double HairMesh::g_bendKd = 5.0; // 7
 double HairMesh::g_torsionKs = 10000.0;
 double HairMesh::g_torsionKd = 0.10;
 
-double HairMesh::g_edgeKs = 100.0;
+double HairMesh::g_edgeKs = 2000.0;
 double HairMesh::g_edgeKd = 5.0;
 
 double HairMesh::g_stictionKs = 100.0000;
 double HairMesh::g_stictionKd = 5.0;
 
 
-bool SHOULD_DRAW_HAIR_PARTICLES = true;
-bool SHOULD_DRAW_GHOST_PARTICLES = true;
 
-
-
-
-// TODO
 double HairMesh::g_attachmentKs = 0.000;
 double HairMesh::g_attachmentKd = 0.000;
 
@@ -44,6 +38,10 @@ HairMesh::HairMesh() :
     m_cols(0), m_rows(0), m_stacks(0), m_width(0.0), m_height(0.0), m_depth(0.0)
 {
 	SHOULD_DRAW_HAIR = true;
+	SHOULD_DRAW_HAIR_PARTICLES = false;
+	SHOULD_DRAW_GHOST_PARTICLES = false;
+	SHOULD_DRAW_STICTION_PARTICLES = true;
+	
     SetSize(1.0, 1.0, 1.0);
     SetGridSize(6, 6, 6);
 }
@@ -333,7 +331,7 @@ void HairMesh::Update(double dt, const World& world, const vec3& externalForces)
 	CheckParticleCollisions(world);
 	CheckStrandCollisions();
 	applyStiction();
-	//applyImpulse();
+	applyImpulse();
 	//ComputeHairForces(StrandList, dt);
 	//updateVelocity(dt);
 	applyStrainLimiting(dt);			// v_n+dt/2
@@ -704,6 +702,7 @@ void HairMesh::RK4Integrate(double dt)
 	HairStrandList target = StrandList;		//Copy
 
 	for (unsigned int i = 0; i < StrandList.size(); i++) {
+		target = StrandList;
 		HairStrand& sStrand = source.getStrand(i);
 		HairStrand& tStrand = target.getStrand(i);
 		
@@ -711,10 +710,9 @@ void HairMesh::RK4Integrate(double dt)
 		HairMesh::ParticleList& sParticles = sStrand.strandParticles;
 		HairMesh::ParticleList& tParticles = tStrand.strandParticles;
 		
-		//Step 1 
+		//Step 1 - normal
 		HairMesh::ParticleList accum1 = sStrand.strandParticles;
 		for (unsigned int j = 0; j < sParticles.size(); j++) {
-				if (j == 0) continue;
 				Particle& s = sParticles[j];
 				Particle& k1 = accum1[j];
 				k1.force = s.force;
@@ -724,13 +722,27 @@ void HairMesh::RK4Integrate(double dt)
 				t.velocity = s.velocity + halfdt * k1.force * 1/k1.mass;
 				t.position = s.position + halfdt * k1.velocity;
 		}
+		//Step 1- stiction
+		HairMesh::StictionParticleList& st_sParticles = sStrand.stictionParticles;
+		HairMesh::StictionParticleList& st_tParticles = tStrand.stictionParticles;
+		HairMesh::StictionParticleList st_accum1 = sStrand.stictionParticles;
+		
+		for (unsigned int j = 0; j < st_sParticles.size(); j++) {
+				StictionParticle& s = st_sParticles[j];
+				StictionParticle& k1 = st_accum1[j];
+				k1.force = s.force;
+				k1.velocity = s.velocity;
+
+				StictionParticle& t = st_tParticles[j];
+				t.velocity = s.velocity + halfdt * k1.force * 1/k1.mass;
+				t.position = s.position + halfdt * k1.velocity;
+		}
 
 		ComputeHairForces(target, dt);
 
 		//Step 2
 		HairMesh::ParticleList accum2 = sStrand.strandParticles;
 		for (unsigned int j = 0; j < sParticles.size(); j++) {
-				if (j == 0) continue;
 				Particle& t =  tParticles[j];
 				Particle& k2 = accum2[j];
 
@@ -741,13 +753,25 @@ void HairMesh::RK4Integrate(double dt)
 				t.velocity = s.velocity + halfdt * k2.force * 1/k2.mass;
 				t.position = s.position + halfdt * k2.velocity;
 		}
+		//Step 2 - stiction
+		HairMesh::StictionParticleList st_accum2 = sStrand.stictionParticles;
+		for (unsigned int j = 0; j < st_sParticles.size(); j++) {
+				StictionParticle& t =  st_tParticles[j];
+				StictionParticle& k2 = st_accum2[j];
+
+				k2.force = t.force;
+				k2.velocity = t.velocity;
+
+				StictionParticle& s = st_sParticles[j];
+				t.velocity = s.velocity + halfdt * k2.force * 1/k2.mass;
+				t.position = s.position + halfdt * k2.velocity;
+		}
 
 		ComputeHairForces(target, dt);
 
 		//Step 3
 		HairMesh::ParticleList accum3 = sStrand.strandParticles;
 		for (unsigned int j = 0; j < sParticles.size(); j++) {
-				if (j == 0) continue;
 				Particle& t = tParticles[j];
 				Particle& k3 = accum3[j];
 
@@ -759,14 +783,38 @@ void HairMesh::RK4Integrate(double dt)
 				t.position = s.position + dt * k3.velocity;
 		}
 
+		//Step 3 - Stiction
+		HairMesh::StictionParticleList st_accum3 = sStrand.stictionParticles;
+		for (unsigned int j = 0; j < st_sParticles.size(); j++) {
+				StictionParticle& t = st_tParticles[j];
+				StictionParticle& k3 = st_accum3[j];
+
+				k3.force = t.force;
+				k3.velocity = t.velocity;
+
+				StictionParticle& s = st_sParticles[j];
+				t.velocity = s.velocity + dt * k3.force * 1/k3.mass;
+				t.position = s.position + dt * k3.velocity;
+		}
+
 		ComputeHairForces(target, dt);
 
 		//Step 4
 		HairMesh::ParticleList accum4 = sStrand.strandParticles;
 		for (unsigned int j = 0; j < sParticles.size(); j++) {
-				if (j == 0) continue;
 				Particle& t = tParticles[j];
 				Particle& k4 = accum4[j];
+
+				k4.force = t.force;
+				k4.velocity = t.velocity;
+		}
+
+		//Step 4 - Stiction
+		HairMesh::StictionParticleList st_accum4 = sStrand.stictionParticles;
+		for (unsigned int j = 0; j < st_sParticles.size(); j++) {
+				if (j == 0) continue;
+				StictionParticle& t = st_tParticles[j];
+				StictionParticle& k4 = st_accum4[j];
 
 				k4.force = t.force;
 				k4.velocity = t.velocity;
@@ -778,7 +826,6 @@ void HairMesh::RK4Integrate(double dt)
 		double asixth = 1/6.0;
 		double athird = 1/3.0;
 		for (unsigned int j = 0; j < sParticles.size(); j++) {
-				if (j == 0) continue;
 				Particle& p = sParticles[j];
 				Particle& k1 = accum1[j];
 				Particle& k2 = accum2[j];
@@ -787,9 +834,28 @@ void HairMesh::RK4Integrate(double dt)
 
 				p.velocity = p.velocity + dt*(asixth * k1.force +
 					athird * k2.force + athird * k3.force + asixth * k4.force)*1/p.mass;
-
+				if (j >0) {
 				p.position = p.position + dt*(asixth * k1.velocity +
 				athird * k2.velocity + athird * k3.velocity + asixth * k4.velocity);
+		
+				}
+		}
+
+		//Put all the stictin together
+		for (unsigned int j = 0; j < st_sParticles.size(); j++) {
+				StictionParticle& p = st_sParticles[j];
+				StictionParticle& k1 = st_accum1[j];
+				StictionParticle& k2 = st_accum2[j];
+				StictionParticle& k3 = st_accum3[j];
+				StictionParticle& k4 = st_accum4[j];
+
+				p.velocity = p.velocity + dt*(asixth * k1.force +
+					athird * k2.force + athird * k3.force + asixth * k4.force)*1/p.mass;
+				if (j >0){
+				p.position = p.position + dt*(asixth * k1.velocity +
+				athird * k2.velocity + athird * k3.velocity + asixth * k4.velocity);
+		
+				}
 		}
 	}
 }
@@ -1203,13 +1269,16 @@ HairMesh::StictionParticle::StictionParticle()
 	 isTemporary = true;
 }
 
-HairMesh::StictionParticle::StictionParticle(const HairMesh::StictionParticle& p) :
- m_s1(p.m_s1), m_p1(p.m_p1), m_s2(p.m_s2), m_p2(p.m_p2) {
+HairMesh::StictionParticle::StictionParticle(const HairMesh::StictionParticle& p) {
 	 isTemporary = p.isTemporary;
 	 velocity = p.velocity;
 	 force = p.force;
 	 mass = p.mass;
 	 position = p.position;
+	 m_s1 = p.m_s1;
+	m_p1 = p.m_p1;
+	m_s2 = p.m_s2;
+	m_p2 = p.m_p2;
 	 //Nothing else
 }
 
@@ -1253,8 +1322,9 @@ void HairMesh::InitHairMesh()
 	//Add to our strandList
 	//StrandList.addStrand(h);
 
-	int numStrands = 5;
-	double angleOffset = 20.0 / numStrands;
+	int numStrands = 3;
+	double angleOffset = 360.0 / numStrands;
+
 	// Create a strand for each angle and add to StrandList
 	for (int i = 0; i < numStrands; i++) {
 		vec3 rootPosition(0, 2.3, 0);
@@ -1449,7 +1519,7 @@ void HairMesh::DrawHairSprings() {
 
 		} else {
 			// all other springs
-			p1 =(GetParticleInStrand(sIndex1, ptIndex1)).position;
+			p1 = (GetParticleInStrand(sIndex1, ptIndex1)).position;
 			p2 = (GetParticleInStrand(sIndex2, ptIndex2)).position;
 		}
 		//TODO: DO CORRENT DRAWING / ORGANIZE on EB
@@ -1479,8 +1549,8 @@ void HairMesh::DrawHairParticles() {
 		//Get Particles for a strand
 		const HairMesh::ParticleList hairParticles = strand.strandParticles;
 		for (unsigned int k = 0; k <  hairParticles.size(); k++) {
-			if (!SHOULD_DRAW_HAIR_PARTICLES && k%2 == 0) return;
-			if (!SHOULD_DRAW_GHOST_PARTICLES && k%2 == 1) return;
+			if (!SHOULD_DRAW_HAIR_PARTICLES && k%2 == 0) continue;
+			if (!SHOULD_DRAW_GHOST_PARTICLES && k%2 == 1) continue;
 			//Current Particle in a strand
 			const Particle p0 = hairParticles[k];
 
@@ -1490,7 +1560,26 @@ void HairMesh::DrawHairParticles() {
 			//Create vertices for each particle to draw a line between them
 			glVertex3f(p0.position[0], p0.position[1], p0.position[2]);
 		}
+
+		//Draw Stiction PArticles
+		//Get Particles for a strand
+		const HairMesh::StictionParticleList stictionParticles = strand.stictionParticles;
+		if (!SHOULD_DRAW_STICTION_PARTICLES) continue;
+		for (unsigned int k = 0; k <  stictionParticles.size(); k++) {
+			//Current Particle in a strand
+			const StictionParticle p0 = GetStictionParticleInStrand(i,k);// stictionParticles[k];
+
+			// GHOST PARTICLES ARE ODD INDICES, HAIR PARTICLES ARE EVEN
+			glColor4f(0.0, 1.0, 0.6, 1.0);
+			//Create vertices for each particle to draw a line between them
+			glVertex3f(p0.position[0], p0.position[1], p0.position[2]);
+		}
+
     }
+
+
+
+
 
     glEnd();
     glEnable(GL_LIGHTING);
@@ -1685,8 +1774,8 @@ void HairMesh::CheckStrandCollisions() {
 	HAIR_STICTIONS.clear();
 	HAIR_IMPULSES.clear();
 
-	double collisionEpsilon = 0.06;
-	double contactEpsilon = 0.02;
+	double collisionEpsilon = 0.002; //0.06
+	double contactEpsilon = 0.0000;
 
 	int totalNumStrands = StrandList.size();
 	// i loops through all strands but the last, b/c we will compare second to last with last in l loop
@@ -1743,7 +1832,10 @@ void HairMesh::CheckStrandCollisions() {
 						impulse.segmentStartIndex2 = l;
 						impulse.p1 = cp1;
 						impulse.p2 = cp2;
+						impulse.a = x1;
+						impulse.b = x2;
 						// calculate adjusted impulse; dist is my impulse magnitude?
+						dist = dist / 2.0;
 						double adjustedImpulse = (2 * dist) / (x1*x1 + (1-x1*x1) + x2*x2 + (1-x2*x2));
 						impulse.m_distance = adjustedImpulse;
 						HAIR_IMPULSES.push_back(impulse);
@@ -2082,7 +2174,7 @@ void HairMesh::HairStrand::InitStrand(double angle)
 	*/
 	strandParticles = ParticleList();
     // Init particles
-	float strandLength = 2.0f;
+	float strandLength = 1.5f;
 	int numHairParticles = 32;
 	int numGhostParticles = numHairParticles - 1;
 	int numTotalParticles = numHairParticles + numGhostParticles;

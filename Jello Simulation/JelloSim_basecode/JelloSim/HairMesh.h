@@ -53,7 +53,7 @@ public:
 		EDGE = 0x02,
 		TORSION = 0x04,
 		BEND = 0x08,
-		STICTION = 0x1
+		STICTION = 0x10
 
 
 											
@@ -162,7 +162,6 @@ public:
     static const unsigned int FORCES = 0x1000;
 
 protected:
-	class Particle;
     class Particle
     {
     public:
@@ -230,10 +229,14 @@ protected:
 //##################################################
 public:
 	bool SHOULD_DRAW_HAIR;
+	bool SHOULD_DRAW_HAIR_PARTICLES;
+	bool SHOULD_DRAW_GHOST_PARTICLES;
+	bool SHOULD_DRAW_STICTION_PARTICLES;
 protected:
-	class Stiction;
 	class Impulse;
+	class Stiction;
 	class StictionParticle;
+
 	///HAIR Update Functions
 	void applyStrainLimiting(double dt);
 	void applySelfRepulsions(double dt);
@@ -250,11 +253,6 @@ protected:
 
 	void applyStiction();
 	void applyImpulse();
-
-	//Get particle by strand and particle index
-	Particle& GetParticleInStrand(int sNum, int pNum);
-	StictionParticle& GetStictionParticleInStrand(int sNum, int pNum);
-
 
 	//HAIR SPRINGS 
 	static double g_torsionKs;
@@ -412,6 +410,9 @@ protected:
 		double b;
 	};
 
+	//Get particle by strand and particle index
+	Particle& GetParticleInStrand(int sNum, int pNum);
+	StictionParticle& GetStictionParticleInStrand(int sNum, int pNum);
 
 };
 
