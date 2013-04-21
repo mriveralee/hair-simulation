@@ -1572,37 +1572,57 @@ void HairMesh::ComputeHairForces(HairStrandList& strands, double dt) {
     for(unsigned int i = 0; i < HAIR_SPRINGS.size(); i++)
     {
         Spring& spring = HAIR_SPRINGS[i];
-		Particle& a = Particle();
-		Particle& b = Particle(); 
+		/*Particle& a = Particle();
+		Particle& b = Particle(); */
 
 		// Stiction Spring
 		if (spring.m_type == STICTION) {
-			a = strands.getStictionParticleInStrand(spring.m_s1, spring.m_p1);
-			b = strands.getStictionParticleInStrand(spring.m_s2, spring.m_p2);
+			Particle& a = strands.getStictionParticleInStrand(spring.m_s1, spring.m_p1);
+			Particle& b = strands.getStictionParticleInStrand(spring.m_s2, spring.m_p2);
+			//Spring Variables
+			double Ks = spring.m_Ks;				 //Hook's Spring Constant
+			double Kd = spring.m_Kd;				 //Damping Constant
+			double R = spring.m_restLen;			 //Rest Length of Spring
+			vec3 L = a.position - b.position;			 //Vector from B to A (position)
+			vec3 normL = L/L.Length();				 //Normalized L vector
+			vec3 diffVelocity = a.velocity - b.velocity;	 //Vector Velocities
+			double length = L.Length()-R;
+			//Stiffness Spring Force:	-Ks(|L|-R)*L/(|L|);
+			//Damping Force:			-kd(((v_a-v_b)*L/|L|)* L/|L|);
+
+			vec3 Fs = -1*Ks*(length)*L.Normalize();
+			vec3 Fd = -1*Kd*((L*diffVelocity)/L.Length())*L.Normalize();
+
+			//One particle is -F the other is F
+			a.force += Fs + Fd;
+			b.force += -1*(Fs+Fd);
+		
 		}
 		//All other spring types
 		else {
-			a = strands.getParticleInStrand(spring.m_s1, spring.m_p1);
-			b = strands.getParticleInStrand(spring.m_s2, spring.m_p2);
+			Particle& a = strands.getParticleInStrand(spring.m_s1, spring.m_p1);
+			Particle& b = strands.getParticleInStrand(spring.m_s2, spring.m_p2);
+			//Spring Variables
+			double Ks = spring.m_Ks;				 //Hook's Spring Constant
+			double Kd = spring.m_Kd;				 //Damping Constant
+			double R = spring.m_restLen;			 //Rest Length of Spring
+			vec3 L = a.position - b.position;			 //Vector from B to A (position)
+			vec3 normL = L/L.Length();				 //Normalized L vector
+			vec3 diffVelocity = a.velocity - b.velocity;	 //Vector Velocities
+			double length = L.Length()-R;
+			//Stiffness Spring Force:	-Ks(|L|-R)*L/(|L|);
+			//Damping Force:			-kd(((v_a-v_b)*L/|L|)* L/|L|);
+
+			vec3 Fs = -1*Ks*(length)*L.Normalize();
+			vec3 Fd = -1*Kd*((L*diffVelocity)/L.Length())*L.Normalize();
+
+			//One particle is -F the other is F
+			a.force += Fs + Fd;
+			b.force += -1*(Fs+Fd);
+		
 		}
 
-		//Spring Variables
-		double Ks = spring.m_Ks;				 //Hook's Spring Constant
-		double Kd = spring.m_Kd;				 //Damping Constant
-		double R = spring.m_restLen;			 //Rest Length of Spring
-		vec3 L = a.position - b.position;			 //Vector from B to A (position)
-		vec3 normL = L/L.Length();				 //Normalized L vector
-		vec3 diffVelocity = a.velocity - b.velocity;	 //Vector Velocities
-		double length = L.Length()-R;
-		//Stiffness Spring Force:	-Ks(|L|-R)*L/(|L|);
-		//Damping Force:			-kd(((v_a-v_b)*L/|L|)* L/|L|);
-
-		vec3 Fs = -1*Ks*(length)*L.Normalize();
-		vec3 Fd = -1*Kd*((L*diffVelocity)/L.Length())*L.Normalize();
-
-		//One particle is -F the other is F
-		a.force += Fs + Fd;
-		b.force += -1*(Fs+Fd);
+		
     }
 
 	//TODO: COMPUTE FORCES FOR STICTION PARTICLES
