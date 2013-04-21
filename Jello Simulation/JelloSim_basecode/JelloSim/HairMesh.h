@@ -89,7 +89,7 @@ protected:
 	virtual void CheckForCollisions(ParticleGrid& grid, const World& world);
 	virtual void ResolveCollisions(ParticleGrid& grid);
 	virtual void ResolveContacts(ParticleGrid& grid);
-	virtual bool FloorIntersection(Particle& p, int strandIndex, Intersection& intersection);
+	virtual bool FloorIntersection(Particle& p, int particleIndex, int strandIndex, Intersection& intersection);
     virtual bool CylinderIntersection(Particle& p, World::Cylinder* cylinder, Intersection& intersection);
 	virtual bool SphereIntersection(Particle& p, int strandIndex, int particleIndex, World::Sphere* sphere, Intersection& intersection);
 
@@ -242,7 +242,7 @@ protected:
 
 	void CheckCollisions(const World& world);
 	void ResolveHairContacts();
-
+	void ResolveHairCollisions();
 
 	//Get particle by strand and particle index
 	Particle& GetParticleInStrand(int sNum, int pNum);

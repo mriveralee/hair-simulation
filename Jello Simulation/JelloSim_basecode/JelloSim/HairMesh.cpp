@@ -360,6 +360,7 @@ void HairMesh::Update(double dt, const World& world, const vec3& externalForces)
 
 	ComputeHairForces(StrandList, dt);
 	ResolveHairContacts();
+	ResolveHairCollisions();
 //	ResolveContacts(m_vparticles);
 //	ResolveCollisions(m_vparticles);
 
@@ -518,7 +519,7 @@ void HairMesh::ResolveCollisions(ParticleGrid& grid)
 	}
 }
 
-bool HairMesh::FloorIntersection(Particle& p, int strandIndex, Intersection& intersection)
+bool HairMesh::FloorIntersection(Particle& p, int strandIndex, int particleIndex, Intersection& intersection)
 {
 		vec3 X = p.position;		//Particle Position
 		double pY = X[1];
@@ -538,7 +539,7 @@ bool HairMesh::FloorIntersection(Particle& p, int strandIndex, Intersection& int
 		//Check if point is within the collision space - Collision
 		if (0 <= pY && pY <= COLLISION_THRESHOLD) {
 			//cout << "Floor Collision\n";
-			intersection.m_p = p.index;
+			intersection.m_p = particleIndex;
 			intersection.m_strand = strandIndex;
 			intersection.m_distance = fabs(COLLISION_THRESHOLD-pY);			//Distance from top of the collision threshold
 			intersection.m_type = IntersectionType::COLLISION;
@@ -549,7 +550,7 @@ bool HairMesh::FloorIntersection(Particle& p, int strandIndex, Intersection& int
 		//Check if point is below surface of floor - Contact
 		else if (pY < 0) {
 			//cout<< "Floor Contact\n";
-			intersection.m_p = p.index;
+			intersection.m_p = particleIndex;
 			intersection.m_strand = strandIndex;
 			intersection.m_distance = fabs(0.0-pY);							//Distance from the surface
 			intersection.m_type = IntersectionType::CONTACT;
@@ -1627,13 +1628,13 @@ void HairMesh::CheckCollisions(const World& world) {
 					}
 				}
 				else if (world.m_shapes[k]->GetType() == World::GROUND && 
-					FloorIntersection(p, i, intersection))
+					FloorIntersection(p, i, j, intersection))
                 {
 					//cout << "FLOOOOOOR" << endl;
 					if (intersection.m_type == IntersectionType::CONTACT) {
-						m_vcontacts.push_back(intersection);
+						HAIR_CONTACTS.push_back(intersection);
 					} else if (intersection.m_type == IntersectionType::COLLISION) {
-						m_vcollisions.push_back(intersection);
+						HAIR_COLLISIONS.push_back(intersection);
 					}
                 }
 			} // ----------------END FOR k-----------------------------------
@@ -1679,6 +1680,39 @@ void HairMesh::ResolveHairContacts() {
 		//}
 
     }
+}
+
+void HairMesh::ResolveHairCollisions()
+{
+    //COLLISION - Close to Hitting other object
+	for(unsigned int i = 0; i < HAIR_COLLISIONS.size(); i++)
+    {
+		//Collision Details
+        const Intersection result = HAIR_COLLISIONS[i];
+        Particle& p = GetParticleInStrand(result.m_strand, result.m_p);
+		double D = result.m_distance;	
+        vec3 N = result.m_normal;
+		vec3 unitN = N.Normalize();
+		
+		//Get Particle's Velocity in direction of surface Normal Direction
+		vec3 V = p.velocity;
+		double VProj = V*unitN;						
+		vec3 VNorm = (V*unitN)*unitN;				
+		
+		// If Velocity is moving into the collision threshold (towards the surface), apply the force
+		if (VProj <= 0.0) {
+			//Apply force that is relative to the distance  from the collision threshold
+			vec3 Fpenalty = -1*((g_penaltyKs*(D-0) + g_penaltyKd*(V*(unitN)))*unitN);
+			p.force += Fpenalty;
+
+			double kFriction = result.m_ground_friction;
+			if (kFriction > 0.0) {
+				//Kinectic Friction Force
+				//cout<<"Kinectic Friction";
+				p.force -= D*N/friction_Mk;
+			}
+		}
+	}
 }
 
 //---------------------------------------------------------------------
