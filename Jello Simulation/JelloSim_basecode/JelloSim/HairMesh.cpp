@@ -16,10 +16,10 @@ double HairMesh::COLLISION_THRESHOLD = 0.01;
 double HairMesh::jelloStartY = 1.3; //0.0
 
 //Da Hair Vars
-double HairMesh::g_bendKs = 4000.0000; //3000
+double HairMesh::g_bendKs = 3000.0000; //3000
 double HairMesh::g_bendKd = 5.0; // 7
 
-double HairMesh::g_torsionKs = 1000.0;
+double HairMesh::g_torsionKs = 10000.0;
 double HairMesh::g_torsionKd = 0.10;
 
 double HairMesh::g_edgeKs = 100.0;
@@ -1679,7 +1679,7 @@ void HairMesh::CheckParticleCollisions(const World& world) {
 }
 
 void HairMesh::CheckStrandCollisions() {
-	//HAIR_STICTIONS.clear();
+	HAIR_STICTIONS.clear();
 
 	double collisionEpsilon = 0.06;
 	double contactEpsilon = 0.02;
