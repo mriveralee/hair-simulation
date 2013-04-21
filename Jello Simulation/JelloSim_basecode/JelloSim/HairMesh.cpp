@@ -7,8 +7,6 @@ double HairMesh::g_structuralKs = 5000.000; //3k
 double HairMesh::g_structuralKd = 5.000; //10
 double HairMesh::g_shearKs = 4000.000; //4000
 double HairMesh::g_shearKd = 6.00; //10
-double HairMesh::g_bendKs = 4000.0000; //3000
-double HairMesh::g_bendKd = 5.00; // 7
 double HairMesh::g_penaltyKs = 6000.000; //5000
 double HairMesh::g_penaltyKd = 320.000; //10
 
@@ -18,10 +16,12 @@ double HairMesh::COLLISION_THRESHOLD = 0.01;
 double HairMesh::jelloStartY = 1.3; //0.0
 
 //Da Hair Vars
-double HairMesh::g_torsionKs = 0.0;
-double HairMesh::g_torsionKd = 0.0;
-double HairMesh::g_edgeKs = 0.0;
-double HairMesh::g_edgeKd = 0.0;
+double HairMesh::g_bendKs = 2000.0000; //3000
+double HairMesh::g_bendKd = 5.00; // 7
+double HairMesh::g_torsionKs = 4000.0;
+double HairMesh::g_torsionKd = 5.0;
+double HairMesh::g_edgeKs = 1000.0;
+double HairMesh::g_edgeKd = 5.0;
 
 
 
@@ -1315,13 +1315,26 @@ void HairMesh::InitHairMesh()
 		///////////////////////
 		// Add Bend Springs ///
 		///////////////////////
-		for (unsigned int pNum = 0; pNum < hairParticles.size()-4; pNum+=2 ) {
-			//Current Particle index in a strand (Normal)
-			int p0 = pNum;
-			//Next  particle index in the strand (Ghost)
-			int p1 = pNum+4;
-			//Add the Bend Springs
-			AddBendSpring(sNum, p0, sNum, p1);   //first to second
+		for (unsigned int pNum = 0; pNum < hairParticles.size()-3; pNum++ ) {
+			//Normal Particles
+			if (pNum % 2 == 0) {
+				//Current Particle index in a strand (Normal)
+				int p0 = pNum;
+				//Next  particle index in the strand (Ghost)
+				int p1 = pNum+4;
+				//Add the Bend Springs
+				AddBendSpring(sNum, p0, sNum, p1);   //first to second
+			}
+			else if (pNum % 2 == 1) {
+				//Current Particle index in a strand (Normal)
+				int p0 = pNum;
+				//Next  particle index in the strand (Ghost)
+				int p1 = pNum+2;
+				//Add the Bend Springs
+				AddBendSpring(sNum, p0, sNum, p1);   //first to second
+			
+
+			}
 		}
 	}
 
