@@ -162,7 +162,10 @@ void onKeyboardCb(unsigned char key, int x, int y)
    else if (key == '5') mask = theHair.TORSION;
    else if (key == '6') mask = theHair.BEND;
    else if (key == '7') mask = theHair.STICTION;
-
+   else if (key =='q') theHair.SHOULD_DRAW_HAIR_PARTICLES = !theHair.SHOULD_DRAW_HAIR_PARTICLES;
+   else if (key =='w') theHair.SHOULD_DRAW_GHOST_PARTICLES = !theHair.SHOULD_DRAW_GHOST_PARTICLES;
+   else if (key =='e') theHair.SHOULD_DRAW_STICTION_PARTICLES = !theHair.SHOULD_DRAW_STICTION_PARTICLES;
+   
    if (mask)
    {
        if (theHair.GetDrawFlags() & mask)

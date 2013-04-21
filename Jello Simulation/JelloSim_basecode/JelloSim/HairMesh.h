@@ -53,7 +53,7 @@ public:
 		EDGE = 0x02,
 		TORSION = 0x04,
 		BEND = 0x08,
-		STICTION = 0x1
+		STICTION = 0x10
 
 
 											
@@ -230,9 +230,12 @@ protected:
 //##################################################
 public:
 	bool SHOULD_DRAW_HAIR;
+	bool SHOULD_DRAW_HAIR_PARTICLES;
+	bool SHOULD_DRAW_GHOST_PARTICLES;
+	bool SHOULD_DRAW_STICTION_PARTICLES;
 protected:
 	class Stiction;
-	class StictionParticle;
+
 	///HAIR Update Functions
 	void applyStrainLimiting(double dt);
 	void applySelfRepulsions(double dt);
@@ -248,11 +251,6 @@ protected:
 	void ResolveHairCollisions();
 
 	void applyStiction();
-
-	//Get particle by strand and particle index
-	Particle& GetParticleInStrand(int sNum, int pNum);
-	StictionParticle& GetStictionParticleInStrand(int sNum, int pNum);
-
 
 	
 
@@ -394,6 +392,13 @@ protected:
 		vec3 p1;
 		vec3 p2;
 	};
+
+	//Get particle by strand and particle index
+	Particle& GetParticleInStrand(int sNum, int pNum);
+	StictionParticle& GetStictionParticleInStrand(int sNum, int pNum);
+
+
+	
 
 };
 
