@@ -355,12 +355,14 @@ protected:
 		Stiction();
 		Stiction(const Stiction& p);
 		Stiction& operator=(const Stiction& p);
-		Stiction(IntersectionType type, int p, const vec3& normal, double d, int s1, int start1, int s2, int start2);
+		Stiction(IntersectionType type, int p, const vec3& normal, double d, int s1, int start1, int s2, int start2, vec3 cp1, vec3 cp2);
 
 		int strandIndex1;
 		int segmentStartIndex1;
 		int strandIndex2;
 		int segmentStartIndex2;
+		vec3 p1;
+		vec3 p2;
 	};
 
 };
