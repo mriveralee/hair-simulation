@@ -345,7 +345,7 @@ void HairMesh::Update(double dt, const World& world, const vec3& externalForces)
 {
     m_externalForces = externalForces;
 
-	CheckCollisions(world);
+	CheckParticleCollisions(world);
 	ComputeHairForces(StrandList, dt);
 	//updateVelocity(dt);
 	applyStrainLimiting(dt);			// v_n+dt/2
@@ -1263,6 +1263,7 @@ void HairMesh::InitHairMesh()
 	HAIR_SPRINGS.clear();
 	HAIR_CONTACTS.clear();
 	HAIR_COLLISIONS.clear();
+	HAIR_STICTIONS.clear();
 
 	//##########################################################
 	//#################### HAIR INITIALIZATION #################
@@ -1595,7 +1596,7 @@ void HairMesh::ComputeHairForces(HairStrandList& strands, double dt) {
 }
 
 
-void HairMesh::CheckCollisions(const World& world) {
+void HairMesh::CheckParticleCollisions(const World& world) {
     HAIR_CONTACTS.clear();
     HAIR_COLLISIONS.clear();
 	
@@ -1642,6 +1643,38 @@ void HairMesh::CheckCollisions(const World& world) {
 		} // ----------------END FOR j-----------------------------------
 	} // ----------------END FOR i-----------------------------------
 
+}
+
+void HairMesh::CheckStrandCollisions() {
+	int totalNumStrands = StrandList.size();
+	// i loops through all strands but the last, b/c we will compare second to last with last in l loop
+	for (unsigned int i = 0; i < totalNumStrands - 1; i++) {
+		HairStrand& strand = StrandList.getStrand(i);
+		int numParticlesInStrand = strand.strandParticles.size();
+		int strandIndex = i;
+		//cout << "strand: " << strandIndex << endl;
+
+		
+		for (unsigned int j = 0; j < numParticlesInStrand; j++) {
+			// skip the last particle and ghost particles
+			if (j == numParticlesInStrand - 1 || j % 2 == 1) continue;
+			int particleIndex1 = j;
+			Particle p1 = GetParticleInStrand(strandIndex,particleIndex1);
+			int particleIndex2 = j+2;
+			Particle p2 = GetParticleInStrand(strandIndex,particleIndex2);
+
+			// if we've checked i against k already, we don't wanna do k against i again
+			for (unsigned int k = i+1; k < totalNumStrands; k++) {
+
+				for (unsigned int l = 0; l < totalNumStrands; l++) {
+					// skip the last particle and ghost particles
+					if (l == numParticlesInStrand - 1 || l % 2 == 1) continue;
+
+
+				} // ----------------END FOR l-----------------------------------
+			} // ----------------END FOR k-----------------------------------
+		} // ----------------END FOR j-----------------------------------
+	} // ----------------END FOR i-----------------------------------
 }
 
 void HairMesh::ResolveHairContacts() {
@@ -1912,4 +1945,64 @@ void HairMesh::HairStrand::InitStrand(double angle)
 		// TODO: ADD SPRINGS (see InitHairMesh)
 		//cout << list[i].position << endl;
     }
+}
+
+//---------------------------------------------------------------------
+//---------------------------- Stiction -------------------------------
+//---------------------------------------------------------------------
+
+HairMesh::Stiction::Stiction() {
+	m_p = -1;
+	m_normal = vec3(0,0,0);
+	m_distance = 0;
+	m_type = CONTACT;
+	m_ground_friction = 0.0;
+	m_strand = -1;
+	strandIndex1 = -1;
+	segmentStartIndex1 = -1;
+	strandIndex2 = -1;
+	segmentStartIndex2 = -1;
+}
+
+HairMesh::Stiction::Stiction(const HairMesh::Stiction& p) {
+	m_p = p.m_p;
+	m_normal = p.m_normal;
+	m_distance = p.m_distance;
+	m_type = p.m_type;
+	m_ground_friction = p.m_ground_friction;
+	m_strand = -1;
+	strandIndex1 = p.strandIndex1;
+	segmentStartIndex1 = p.segmentStartIndex1;
+	strandIndex2 = p.strandIndex2;
+	segmentStartIndex2 = p.segmentStartIndex2;
+}
+
+HairMesh::Stiction& HairMesh::Stiction::operator=(const HairMesh::Stiction& p) {
+    if (&p == this) return *this;
+    m_p = p.m_p;
+    m_normal = p.m_normal;
+    m_distance = p.m_distance;
+    m_type = p.m_type;
+	m_ground_friction = p.m_ground_friction;
+	m_strand = -1;
+	strandIndex1 = p.strandIndex1;
+	segmentStartIndex1 = p.segmentStartIndex1;
+	strandIndex2 = p.strandIndex2;
+	segmentStartIndex2 = p.segmentStartIndex2;
+    return *this;
+}
+
+HairMesh::Stiction::Stiction(IntersectionType type, int p, const vec3& normal, double d,
+	int s1, int start1, int s2, int start2) {
+	Intersection::Intersection();
+	m_p = p;
+    m_normal = normal;
+    m_distance = d;
+    m_type = type;
+	m_ground_friction = 0.0;
+	m_strand = -1;
+	strandIndex1 = s1;
+	segmentStartIndex1 = start1;
+	strandIndex2 = s2;
+	segmentStartIndex2 = start2;
 }

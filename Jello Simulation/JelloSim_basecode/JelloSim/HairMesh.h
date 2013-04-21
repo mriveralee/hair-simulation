@@ -240,7 +240,8 @@ protected:
 	void updateVelocity(double dt);
 	void extrapolateVelocity(double dt);
 
-	void CheckCollisions(const World& world);
+	void CheckParticleCollisions(const World& world);
+	void CheckStrandCollisions();
 	void ResolveHairContacts();
 	void ResolveHairCollisions();
 
@@ -259,6 +260,7 @@ protected:
 
 	std::vector<Intersection> HAIR_CONTACTS;
     std::vector<Intersection> HAIR_COLLISIONS;
+	std::vector<Intersection> HAIR_STICTIONS;
 	
 	virtual void AddTorsionSpring(int s1, int p1, int s2, int p2);
 	virtual void AddEdgeSpring(int s1, int p1, int s2, int p2);
@@ -344,6 +346,20 @@ protected:
 	void ComputeHairForces(HairStrandList& strands, double dt);
 
 	//TODO: ADD vars for inter-strand collisions (strand 1 hits strand 2)
+
+	class Stiction : public Intersection {
+	public:
+		Stiction();
+		Stiction(const Stiction& p);
+		Stiction& operator=(const Stiction& p);
+		Stiction(IntersectionType type, int p, const vec3& normal, double d, int s1, int start1, int s2, int start2);
+
+		int strandIndex1;
+		int segmentStartIndex1;
+		int strandIndex2;
+		int segmentStartIndex2;
+	};
+
 };
 
 #endif
