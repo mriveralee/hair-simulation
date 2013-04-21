@@ -232,6 +232,7 @@ public:
 	bool SHOULD_DRAW_HAIR;
 protected:
 	class Stiction;
+	class StictionParticle;
 	///HAIR Update Functions
 	void applyStrainLimiting(double dt);
 	void applySelfRepulsions(double dt);
@@ -250,6 +251,8 @@ protected:
 
 	//Get particle by strand and particle index
 	Particle& GetParticleInStrand(int sNum, int pNum);
+	StictionParticle& GetStictionParticleInStrand(int sNum, int pNum);
+
 
 	
 
@@ -279,7 +282,9 @@ protected:
     void DrawHairSprings();
 
 	// Particle List Definition
+	class StictionParticle;
 	typedef std::vector<Particle> ParticleList;
+	typedef std::vector<StictionParticle> StictionParticleList;
 	void DrawHair();
 	void DrawHairParticles();
 
@@ -293,6 +298,22 @@ protected:
         GhostParticle(const GhostParticle& p);
         GhostParticle& operator=(const GhostParticle& p);
 	    GhostParticle(int idx, const vec3& pos, const vec3& vel = vec3(0,0,0), double m = 1);
+	};
+	//#################################
+	//####### Stiction Particle #######
+	//#################################
+	class StictionParticle : public Particle
+    {
+    public:
+        StictionParticle();
+        StictionParticle(const StictionParticle& p);
+        StictionParticle& operator=(const StictionParticle& p);
+	    StictionParticle(int s1, int p1, const vec3& pos, int s2, int p2, const vec3& vel = vec3(0,0,0), double m = 1);
+		int m_s1;
+		int m_p1;
+		int m_s2;
+		int m_p2;
+	
 	};
 
 	//##############################
@@ -325,7 +346,7 @@ protected:
 			
 			
 			ParticleList strandParticles;
-
+			StictionParticleList stictionParticles;
 
 			static HairStrand EMPTY;
 	};
@@ -346,6 +367,8 @@ protected:
 			void addStrand(HairStrand s);
 
 			HairMesh::Particle& getParticleInStrand(int sNum, int pNum);
+			HairMesh::StictionParticle& getStictionParticleInStrand(int sNum, int pNum);
+
 			int size();
 	};
 		

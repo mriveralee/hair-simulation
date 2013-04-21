@@ -1262,6 +1262,55 @@ HairMesh::GhostParticle& HairMesh::GhostParticle::operator=(const HairMesh::Ghos
     return *this;
 }
 
+
+//##################################################################
+//######################### StictionParticle #######################
+//##################################################################
+HairMesh::StictionParticle::StictionParticle(int s1, int p1, const vec3& p, int s2, int p2, const vec3& vel, double m)
+{
+    m_s1 = s1;
+	m_p1 = p1;
+	m_s2 = s2;
+	m_p2 = p2;
+    
+	position = p;
+    velocity = vel;
+    force = vec3(0,0,0);
+    mass = m;
+}
+
+HairMesh::StictionParticle::StictionParticle()
+{
+	Particle::Particle();
+	m_s1 = -1;
+	m_p1 = -1;
+	m_s2 = -1;
+	m_p2 = -1;
+}
+
+HairMesh::StictionParticle::StictionParticle(const HairMesh::StictionParticle& p) 
+{
+	StictionParticle::StictionParticle(p.m_s1, p.m_p1, p.position, p.m_s2, p.m_p2, p.velocity, p.mass);
+	force = p.force;
+}
+
+HairMesh::StictionParticle& HairMesh::StictionParticle::operator=(const HairMesh::StictionParticle& p)
+{
+    if (&p == this) return *this;
+
+    index = p.index;
+    position = p.position;
+    velocity = p.velocity;
+    force = p.force;
+    mass = p.mass;
+	m_s1 = p.m_s1;
+	m_p1 = p.m_p1;
+	m_s2 = p.m_s2;
+	m_p2 = p.m_p2;
+
+    return *this;
+}
+
 //###################################################
 //################ InitHairMesh #####################
 //###################################################
@@ -1366,6 +1415,12 @@ HairMesh::Particle& HairMesh::GetParticleInStrand(int sNum, int pNum) {
 	return (StrandList.getStrand(sNum)).strandParticles[pNum];
 }
 
+HairMesh::StictionParticle& HairMesh::GetStictionParticleInStrand(int sNum, int pNum) {
+	return (StrandList.getStrand(sNum)).stictionParticles[pNum];
+}
+
+
+
 void HairMesh::AddTorsionSpring(int s1, int p1, int s2, int p2)
 {	//Get particles for strand for both sets of numbers
 	Particle& pt1 = GetParticleInStrand(s1, p1);
@@ -1392,8 +1447,9 @@ void HairMesh::AddBendSpring(int s1, int p1, int s2, int p2)
 
 void HairMesh::AddStictionSpring(int s1, int p1, int s2, int p2)
 {
-	Particle& pt1 = GetParticleInStrand(s1, p1);
-	Particle& pt2 = GetParticleInStrand(s2, p2);
+	//GET STI
+	StictionParticle& pt1 = GetStictionParticleInStrand(s1, p1);
+	StictionParticle& pt2 = GetStictionParticleInStrand(s2, p2);
 	double restLen = (pt1.position - pt2.position).Length();
     HAIR_SPRINGS.push_back(Spring(STICTION, s1, p1, s2, p2, g_stictionKs, g_stictionKd, restLen));
 }
@@ -1770,30 +1826,41 @@ void HairMesh::applyStiction() {
 		//Current stiction
 		Stiction stiction = HAIR_STICTIONS[i];
 		//First Closest Particle - add stiction point
-		Particle p1 = Particle();
+		StictionParticle p1 = StictionParticle();
+		p1.m_s1 = stiction.strandIndex1;
+		p1.m_p1 = stiction.segmentStartIndex1;
+		p1.m_s2 = stiction.strandIndex2;
+		p1.m_p2 = stiction.segmentStartIndex2;
 		p1.position = stiction.p1;
 		p1.isTemporary = true;
 
 		//The first strand particle list
 		HairStrand& s1 = StrandList.getStrand(stiction.strandIndex1);
-		ParticleList& pList1 = s1.strandParticles;
+		StictionParticleList& pList1 = s1.stictionParticles;
 		
 		//Insert the first closest particle
-		pList1.emplace(pList1.begin() + stiction.segmentStartIndex1, p1);
-
+		//pList1.emplace(pList1.begin() + stiction.segmentStartIndex1, p1);
+		pList1.push_back(p1);
 
 		//Second Closest Particles - add stiction point
-		Particle p2 = Particle();
-		p2.position = stiction.p2;
+		StictionParticle p2 = StictionParticle();
+		p2.m_s1 = stiction.strandIndex2;
+		p2.m_p1 = stiction.segmentStartIndex2;
+		p2.m_s2 = stiction.strandIndex1;
+		p2.m_p2 = stiction.segmentStartIndex1;
+		p2.position = stiction.p1;
 		p2.isTemporary = true;
 
 		//The Second strand and particle list
 		HairStrand& s2 = StrandList.getStrand(stiction.strandIndex2);
-		ParticleList& pList2 = s2.strandParticles;
+		StictionParticleList& pList2 = s2.stictionParticles;
 		
 		//Insert the second closest particle
-		pList2.emplace(pList2.begin() + stiction.segmentStartIndex2, p2);
-		
+		//pList2.emplace(pList2.begin() + stiction.segmentStartIndex2, p2);
+		pList2.push_back(p2);
+
+		//MAKE A STICTION PARTICLE WRAPPER STORE THEM IN A PLIST 
+
 		//Now add a Stiction Spring
 		this->AddStictionSpring(stiction.strandIndex1, stiction.segmentStartIndex1, stiction.strandIndex2, stiction.segmentStartIndex2);
 	
@@ -1848,6 +1915,11 @@ HairMesh::Particle& HairMesh::HairStrandList::getParticleInStrand(int sNum, int 
 	return p;
 }
 
+HairMesh::StictionParticle& HairMesh::HairStrandList::getStictionParticleInStrand(int sNum, int pNum) {
+	HairStrand& strand = getStrand(sNum);
+	StictionParticle& p = strand.stictionParticles[pNum];
+	return p;
+}
 //---------------------------------------------------------------------
 //---------------------------- HairStrand -----------------------------
 //---------------------------------------------------------------------
