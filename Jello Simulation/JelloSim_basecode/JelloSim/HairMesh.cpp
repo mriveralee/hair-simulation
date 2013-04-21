@@ -1251,11 +1251,12 @@ void HairMesh::InitHairMesh()
 	//Add to our strandList
 	//StrandList.addStrand(h);
 
-	int numStrands = 3;
+	int numStrands = 5;
 	double angleOffset = 360.0 / numStrands;
 	// Create a strand for each angle and add to StrandList
 	for (int i = 0; i < numStrands; i++) {
-		HairStrand h = HairStrand(vec3(0, 1, 0), i * angleOffset);
+		vec3 rootPosition(0, 2.3, 0);
+		HairStrand h = HairStrand(rootPosition, i * angleOffset);
 		StrandList.addStrand(h);
 	}
 
@@ -1756,8 +1757,7 @@ void HairMesh::CheckStrandCollisions() {
 void HairMesh::ResolveHairContacts() {
 
 	//CONTACTS - Penetration of the other object
-	for (unsigned int i = 0; i < HAIR_CONTACTS.size(); i++)
-    {		
+	for (unsigned int i = 0; i < HAIR_CONTACTS.size(); i++) {		
 		//Con
 		const Intersection& result = HAIR_CONTACTS[i];
 		//cout << "when passed into resolveHairContacts: " << result.m_strand << endl;
@@ -1786,17 +1786,16 @@ void HairMesh::ResolveHairContacts() {
 				//cout<<"Kinectic Friction";
 				p.force -= D*N/friction_Mk;
 			}
-
+			p.velocity = vec3(0.0,0.0,0.0); //velocity of particle = 0
+			//p.force = vec3(0.0,0.0,0.0);
 		//}
 
     }
 }
 
-void HairMesh::ResolveHairCollisions()
-{
+void HairMesh::ResolveHairCollisions() {
     //COLLISION - Close to Hitting other object
-	for(unsigned int i = 0; i < HAIR_COLLISIONS.size(); i++)
-    {
+	for(unsigned int i = 0; i < HAIR_COLLISIONS.size(); i++) {
 		//Collision Details
         const Intersection result = HAIR_COLLISIONS[i];
         Particle& p = GetParticleInStrand(result.m_strand, result.m_p);
@@ -1822,6 +1821,8 @@ void HairMesh::ResolveHairCollisions()
 				p.force -= D*N/friction_Mk;
 			}
 		}
+		p.velocity = vec3(0.0,0.0,0.0); //velocity of particle = 0
+		//p.force = vec3(0.0,0.0,0.0);
 	}
 }
 
