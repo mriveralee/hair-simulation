@@ -161,6 +161,7 @@ void onKeyboardCb(unsigned char key, int x, int y)
    else if (key == '4') mask = theHair.EDGE;
    else if (key == '5') mask = theHair.TORSION;
    else if (key == '6') mask = theHair.BEND;
+   else if (key == '7') mask = theHair.STICTION;
 
    if (mask)
    {

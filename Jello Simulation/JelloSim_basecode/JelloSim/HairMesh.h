@@ -53,7 +53,7 @@ public:
 		EDGE = 0x02,
 		TORSION = 0x04,
 		BEND = 0x08,
-		STICTION = 0x10
+		STICTION = 0x1
 
 
 											

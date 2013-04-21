@@ -7,8 +7,8 @@ double HairMesh::g_structuralKs = 5000.000; //3k
 double HairMesh::g_structuralKd = 5.000; //10
 double HairMesh::g_shearKs = 4000.000; //4000
 double HairMesh::g_shearKd = 6.00; //10
-double HairMesh::g_penaltyKs = 3000.000; //5000
-double HairMesh::g_penaltyKd = 320.000; //10
+double HairMesh::g_penaltyKs = 100.000; //5000
+double HairMesh::g_penaltyKd = 20.000; //10
 
 double HairMesh::friction_Mk = 0.5;
 double HairMesh::friction_Amp = 2;
@@ -16,16 +16,16 @@ double HairMesh::COLLISION_THRESHOLD = 0.01;
 double HairMesh::jelloStartY = 1.3; //0.0
 
 //Da Hair Vars
-double HairMesh::g_bendKs = 1000.0000; //3000
+double HairMesh::g_bendKs = 4000.0000; //3000
 double HairMesh::g_bendKd = 5.0; // 7
 
 double HairMesh::g_torsionKs = 1000.0;
 double HairMesh::g_torsionKd = 0.10;
 
-double HairMesh::g_edgeKs = 500.0;
+double HairMesh::g_edgeKs = 100.0;
 double HairMesh::g_edgeKd = 5.0;
 
-double HairMesh::g_stictionKs = 1000.0000;
+double HairMesh::g_stictionKs = 100.0000;
 double HairMesh::g_stictionKd = 5.0;
 
 
@@ -254,27 +254,7 @@ void HairMesh::DrawMesh(const vec3& eyePos)
 }
 
 void HairMesh::DrawSprings(double a)
-{
-   /* const ParticleGrid& g = m_vparticles;
-    glBegin(GL_LINES);
-    for (unsigned int i = 0; i < m_vsprings.size(); i++)
-    {
-        if (!(m_vsprings[i].m_type & m_drawflags)) continue;
-        if (isInterior(m_vsprings[i])) continue;
-
-        switch (m_vsprings[i].m_type)
-        {
-        case BEND:       glColor4f(1.0, 1.0, 0.0, a); break;
-        case STRUCTURAL: glColor4f(1.0, 1.0, 0.0, a); break;
-        case SHEAR:      glColor4f(0.0, 1.0, 1.0, a); break;
-        };
-
-        vec3 p1 = GetParticle(g, m_vsprings[i].m_p1).position;
-        vec3 p2 = GetParticle(g, m_vsprings[i].m_p2).position;
-        glVertex3f(p1[0], p1[1], p1[2]);
-        glVertex3f(p2[0], p2[1], p2[2]);
-    }
-    glEnd();*/
+{ //Do nothing
 }
 
 void HairMesh::DrawCollisionNormals()
@@ -352,7 +332,8 @@ void HairMesh::Update(double dt, const World& world, const vec3& externalForces)
 
 	CheckParticleCollisions(world);
 	CheckStrandCollisions();
-	ComputeHairForces(StrandList, dt);
+	applyStiction();
+	//ComputeHairForces(StrandList, dt);
 	//updateVelocity(dt);
 	applyStrainLimiting(dt);			// v_n+dt/2
 	applySelfRepulsions(dt);			// v_n+dt/2
@@ -364,92 +345,20 @@ void HairMesh::Update(double dt, const World& world, const vec3& externalForces)
 	applySelfRepulsions(dt);			// Modify v_n+1 Use n+1
 	
 //	CheckForCollisions(m_vparticles, world);
-
-	ComputeHairForces(StrandList, dt);
+//ComputeHairForces(StrandList, dt);
 	ResolveHairContacts();
 	ResolveHairCollisions();
 //	ResolveContacts(m_vparticles);
 //	ResolveCollisions(m_vparticles);
-
 	RK4Integrate(dt);
 }
 
 void HairMesh::CheckForCollisions(ParticleGrid& grid, const World& world)
-{
-    //m_vcontacts.clear();
-    //m_vcollisions.clear();
-
-    //for (int i = 0; i < m_rows+1; i++)
-    //{
-    //    for (int j = 0; j < m_cols+1; j++)
-    //    {
-    //        for (int k = 0; k < m_stacks+1; k++)
-    //        {
-    //            Particle& p = GetParticle(grid, i,j,k);
-				//int strand = -1;
-
-    //            // 1. Check collisions with world objects 
-    //            for (unsigned int i = 0; i < world.m_shapes.size(); i++)
-    //            {
-    //                Intersection intersection;
-
-    //                if (world.m_shapes[i]->GetType() == World::CYLINDER && 
-    //                    CylinderIntersection(p, (World::Cylinder*) world.m_shapes[i], intersection))
-    //                {
-				//		if (intersection.m_type == IntersectionType::CONTACT) 
-				//		{
-				//			m_vcontacts.push_back(intersection);
-				//		}
-				//		else if (intersection.m_type == IntersectionType::COLLISION) 
-				//		{
-				//			m_vcollisions.push_back(intersection);
-				//		}
-    //                }
-    //                else if (world.m_shapes[i]->GetType() == World::GROUND && 
-    //                    FloorIntersection(p, -1, intersection))
-    //                {	
-				//		if (intersection.m_type == IntersectionType::CONTACT) 
-				//		{
-				//			m_vcontacts.push_back(intersection);
-				//		}
-				//		else if (intersection.m_type == IntersectionType::COLLISION) 
-				//		{
-				//			m_vcollisions.push_back(intersection);
-				//		}
-    //                }
-					//	else if (world.m_shapes[i]->GetType() == World::SPHERE &&
-				//		SphereIntersection(p, strand, (World::Sphere*) world.m_shapes[i], intersection))
-				//	{
-				//		if (intersection.m_type == IntersectionType::CONTACT) 
-				//		{
-				//			m_vcontacts.push_back(intersection);
-				//		}
-				//		else if (intersection.m_type == IntersectionType::COLLISION) 
-				//		{
-				//			m_vcollisions.push_back(intersection);
-				//		}
-				//	}
-    //            }
-    //        }
-    //    }
-    //}
+{ //Not Used
 }
 
 void HairMesh::ComputeForces(ParticleGrid& grid)
-{
-    // Add external froces to all points
-    for (int i = 0; i < m_rows+1; i++)
-    {
-        for (int j = 0; j < m_cols+1; j++)
-        {
-            for (int k = 0; k < m_stacks+1; k++)
-            {
-                Particle& p = GetParticle(grid, i,j,k);
-                p.force = m_externalForces * p.mass;
-            }
-        }
-    }
-
+{// Not Used
 }
 
 //Object particle is below the surface of another object
@@ -1270,6 +1179,7 @@ HairMesh::GhostParticle& HairMesh::GhostParticle::operator=(const HairMesh::Ghos
 //##################################################################
 HairMesh::StictionParticle::StictionParticle(int s1, int p1, const vec3& p, int s2, int p2, const vec3& vel, double m)
 {
+	Particle::Particle();
     m_s1 = s1;
 	m_p1 = p1;
 	m_s2 = s2;
@@ -1279,6 +1189,7 @@ HairMesh::StictionParticle::StictionParticle(int s1, int p1, const vec3& p, int 
     velocity = vel;
     force = vec3(0,0,0);
     mass = m;
+	isTemporary = true;
 }
 
 HairMesh::StictionParticle::StictionParticle()
@@ -1288,18 +1199,23 @@ HairMesh::StictionParticle::StictionParticle()
 	m_p1 = -1;
 	m_s2 = -1;
 	m_p2 = -1;
+	 isTemporary = true;
 }
 
-HairMesh::StictionParticle::StictionParticle(const HairMesh::StictionParticle& p) 
-{
-	StictionParticle::StictionParticle(p.m_s1, p.m_p1, p.position, p.m_s2, p.m_p2, p.velocity, p.mass);
-	force = p.force;
+HairMesh::StictionParticle::StictionParticle(const HairMesh::StictionParticle& p) :
+ m_s1(p.m_s1), m_p1(p.m_p1), m_s2(p.m_s2), m_p2(p.m_p2) {
+	 isTemporary = p.isTemporary;
+	 velocity = p.velocity;
+	 force = p.force;
+	 mass = p.mass;
+	 position = p.position;
+	 //Nothing else
 }
 
 HairMesh::StictionParticle& HairMesh::StictionParticle::operator=(const HairMesh::StictionParticle& p)
 {
     if (&p == this) return *this;
-
+	isTemporary = p.isTemporary;
     index = p.index;
     position = p.position;
     velocity = p.velocity;
@@ -1447,13 +1363,13 @@ void HairMesh::AddBendSpring(int s1, int p1, int s2, int p2)
     HAIR_SPRINGS.push_back(Spring(BEND, s1, p1, s2, p2, g_bendKs, g_bendKd, restLen));
 }
 
-void HairMesh::AddStictionSpring(int s1, int p1, int s2, int p2)
+void HairMesh::AddStictionSpring(int s1, int p1Index, int s2, int p2Index)
 {
 	//GET STI
-	StictionParticle& pt1 = GetStictionParticleInStrand(s1, p1);
-	StictionParticle& pt2 = GetStictionParticleInStrand(s2, p2);
+	StictionParticle& pt1 = GetStictionParticleInStrand(s1, p1Index);
+	StictionParticle& pt2 = GetStictionParticleInStrand(s2, p2Index);
 	double restLen = (pt1.position - pt2.position).Length();
-    HAIR_SPRINGS.push_back(Spring(STICTION, s1, p1, s2, p2, g_stictionKs, g_stictionKd, restLen));
+    HAIR_SPRINGS.push_back(Spring(STICTION, s1, p1Index, s2, p2Index, g_stictionKs, g_stictionKd, restLen));
 }
     
 
@@ -1511,6 +1427,7 @@ void HairMesh::DrawHairSprings() {
         case BEND:       glColor3f(1.0, 0.4, 0.7); break;
 		case EDGE:		 glColor3f(0.0, 1.0, 1.0); break;
 		case TORSION:	 glColor3f(0.0, 1.0, 0.4); break;
+		case STICTION: glColor3f(0.3, 0.5, 0.1); break;
         };
 
 		int sIndex1 = currSpring.m_s1;
@@ -1520,9 +1437,18 @@ void HairMesh::DrawHairSprings() {
 
 		if (sIndex1 < 0 || ptIndex1 < 0 || sIndex2 < 0 || ptIndex2 < 0) return;
 
-		vec3 p1 = (GetParticleInStrand(sIndex1, ptIndex1)).position;
-		vec3 p2 = (GetParticleInStrand(sIndex2, ptIndex2)).position;
+		vec3 p1;
+		vec3 p2;
+		if (currSpring.m_type == STICTION) {
+			//Stiction Case
+			p1 =(GetStictionParticleInStrand(sIndex1, ptIndex1)).position;
+			p2 = (GetStictionParticleInStrand(sIndex2, ptIndex2)).position;
 
+		} else {
+			// all other springs
+			p1 =(GetParticleInStrand(sIndex1, ptIndex1)).position;
+			p2 = (GetParticleInStrand(sIndex2, ptIndex2)).position;
+		}
 		//TODO: DO CORRENT DRAWING / ORGANIZE on EB
 		glVertex3f(p1[0], p1[1], p1[2]);
         glVertex3f(p2[0], p2[1], p2[2]);
@@ -1628,6 +1554,7 @@ void HairMesh::extrapolateVelocity(double dt) {
 
 //Add Gravity and that good stuff to the particles
 void HairMesh::ComputeHairForces(HairStrandList& strands, double dt) {
+	//Gravity!
 	for (unsigned int i = 0; i < strands.size(); i++) {
 		//Current Strand
 		HairStrand& strand = strands.getStrand(i);
@@ -1641,14 +1568,24 @@ void HairMesh::ComputeHairForces(HairStrandList& strands, double dt) {
 		}
 	}
 	
-    // Update springs
+    // Update springs - Non-stiction
     for(unsigned int i = 0; i < HAIR_SPRINGS.size(); i++)
     {
         Spring& spring = HAIR_SPRINGS[i];
+		Particle& a = Particle();
+		Particle& b = Particle(); 
 
-		Particle& a = strands.getParticleInStrand(spring.m_s1, spring.m_p1);
-        Particle& b = strands.getParticleInStrand(spring.m_s2, spring.m_p2);
-		
+		// Stiction Spring
+		if (spring.m_type == STICTION) {
+			a = strands.getStictionParticleInStrand(spring.m_s1, spring.m_p1);
+			b = strands.getStictionParticleInStrand(spring.m_s2, spring.m_p2);
+		}
+		//All other spring types
+		else {
+			a = strands.getParticleInStrand(spring.m_s1, spring.m_p1);
+			b = strands.getParticleInStrand(spring.m_s2, spring.m_p2);
+		}
+
 		//Spring Variables
 		double Ks = spring.m_Ks;				 //Hook's Spring Constant
 		double Kd = spring.m_Kd;				 //Damping Constant
@@ -1722,7 +1659,7 @@ void HairMesh::CheckParticleCollisions(const World& world) {
 }
 
 void HairMesh::CheckStrandCollisions() {
-	HAIR_STICTIONS.clear();
+	//HAIR_STICTIONS.clear();
 
 	double collisionEpsilon = 0.06;
 	double contactEpsilon = 0.02;
@@ -1872,6 +1809,11 @@ void HairMesh::applyStiction() {
 	for (unsigned int i = 0; i < HAIR_STICTIONS.size(); i++) {
 		//Current stiction
 		Stiction stiction = HAIR_STICTIONS[i];
+
+		//The first strand particle list
+		HairStrand& s1 = StrandList.getStrand(stiction.strandIndex1);
+		StictionParticleList& pList1 = s1.stictionParticles;
+	
 		//First Closest Particle - add stiction point
 		StictionParticle p1 = StictionParticle();
 		p1.m_s1 = stiction.strandIndex1;
@@ -1880,14 +1822,11 @@ void HairMesh::applyStiction() {
 		p1.m_p2 = stiction.segmentStartIndex2;
 		p1.position = stiction.p1;
 		p1.isTemporary = true;
-
-		//The first strand particle list
-		HairStrand& s1 = StrandList.getStrand(stiction.strandIndex1);
-		StictionParticleList& pList1 = s1.stictionParticles;
+		p1.index = pList1.size();
 		
-		//Insert the first closest particle
-		//pList1.emplace(pList1.begin() + stiction.segmentStartIndex1, p1);
-		pList1.push_back(p1);
+		//The Second strand and particle list
+		HairStrand& s2 = StrandList.getStrand(stiction.strandIndex2);
+		StictionParticleList& pList2 = s2.stictionParticles;
 
 		//Second Closest Particles - add stiction point
 		StictionParticle p2 = StictionParticle();
@@ -1897,18 +1836,21 @@ void HairMesh::applyStiction() {
 		p2.m_p2 = stiction.segmentStartIndex1;
 		p2.position = stiction.p2;
 		p2.isTemporary = true;
-
-		//The Second strand and particle list
-		HairStrand& s2 = StrandList.getStrand(stiction.strandIndex2);
-		StictionParticleList& pList2 = s2.stictionParticles;
+		p2.index = pList2.size();
 		
+		//Prevents Explosion of stiction particles
+		if (p2.index > StrandList.size() || p1.index > StrandList.size()){
+			return;
+		}
+
+		//Insert the first closest particle
+		pList1.push_back(p1);
 		//Insert the second closest particle
-		//pList2.emplace(pList2.begin() + stiction.segmentStartIndex2, p2);
 		pList2.push_back(p2);
 
 
 		//Now add a Stiction Spring
-		this->AddStictionSpring(stiction.strandIndex1, stiction.segmentStartIndex1, stiction.strandIndex2, stiction.segmentStartIndex2);
+		AddStictionSpring(stiction.strandIndex1, p1.index, stiction.strandIndex2, p2.index);
 	
 
 	}
@@ -1989,6 +1931,7 @@ HairMesh::HairStrand::HairStrand(const vec3& p)
 HairMesh::HairStrand::HairStrand() : index(-1), position(0,0,0)
 {
 	strandParticles = ParticleList();
+	stictionParticles = StictionParticleList();
 	InitStrand();
 }
 
@@ -1999,6 +1942,7 @@ HairMesh::HairStrand::HairStrand(const vec3& p, double angle)
 {
 	position = p;
 	strandParticles = ParticleList();
+	stictionParticles = StictionParticleList();
 	InitStrand(angle);
 }
 
@@ -2009,6 +1953,7 @@ HairMesh::HairStrand::HairStrand(const HairMesh::HairStrand& h) :
     index(h.index), position(h.position)
 {
 	strandParticles = h.strandParticles;
+	stictionParticles = h.stictionParticles;
 }
 
 //#######################################################
@@ -2021,6 +1966,7 @@ HairMesh::HairStrand& HairMesh::HairStrand::operator=(const HairMesh::HairStrand
     index = h.index;
     position = h.position;
 	strandParticles = h.strandParticles;
+	stictionParticles = h.stictionParticles;
 	
     return *this;
 }
