@@ -52,7 +52,8 @@ public:
 		SHEAR = 0x01,
 		EDGE = 0x02,
 		TORSION = 0x04,
-		BEND = 0x08
+		BEND = 0x08,
+		STICTION = 0x10
 
 
 											
@@ -243,6 +244,8 @@ protected:
 	void CheckCollisions(const World& world);
 	void ResolveHairContacts();
 	void ResolveHairCollisions();
+
+	void applyStiction();
 
 	//Get particle by strand and particle index
 	Particle& GetParticleInStrand(int sNum, int pNum);
