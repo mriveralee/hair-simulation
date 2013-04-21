@@ -1848,7 +1848,7 @@ void HairMesh::applyStiction() {
 		p2.m_p1 = stiction.segmentStartIndex2;
 		p2.m_s2 = stiction.strandIndex1;
 		p2.m_p2 = stiction.segmentStartIndex1;
-		p2.position = stiction.p1;
+		p2.position = stiction.p2;
 		p2.isTemporary = true;
 
 		//The Second strand and particle list
