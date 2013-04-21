@@ -231,6 +231,7 @@ protected:
 //##############  HAIR STRANDS YO ##################
 //##################################################
 protected:
+	class Stiction;
 	///HAIR Update Functions
 	void applyStrainLimiting(double dt);
 	void applySelfRepulsions(double dt);
@@ -260,7 +261,7 @@ protected:
 
 	std::vector<Intersection> HAIR_CONTACTS;
     std::vector<Intersection> HAIR_COLLISIONS;
-	std::vector<Intersection> HAIR_STICTIONS;
+	std::vector<Stiction> HAIR_STICTIONS;
 	
 	virtual void AddTorsionSpring(int s1, int p1, int s2, int p2);
 	virtual void AddEdgeSpring(int s1, int p1, int s2, int p2);

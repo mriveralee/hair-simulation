@@ -346,6 +346,7 @@ void HairMesh::Update(double dt, const World& world, const vec3& externalForces)
     m_externalForces = externalForces;
 
 	CheckParticleCollisions(world);
+	CheckStrandCollisions();
 	ComputeHairForces(StrandList, dt);
 	//updateVelocity(dt);
 	applyStrainLimiting(dt);			// v_n+dt/2
@@ -1646,35 +1647,78 @@ void HairMesh::CheckParticleCollisions(const World& world) {
 }
 
 void HairMesh::CheckStrandCollisions() {
+	HAIR_STICTIONS.clear();
+
+	double collisionEpsilon = 0.06;
+	double contactEpsilon = 0.02;
+
 	int totalNumStrands = StrandList.size();
 	// i loops through all strands but the last, b/c we will compare second to last with last in l loop
 	for (unsigned int i = 0; i < totalNumStrands - 1; i++) {
 		HairStrand& strand = StrandList.getStrand(i);
 		int numParticlesInStrand = strand.strandParticles.size();
-		int strandIndex = i;
+		int strandIndex1 = i;
 		//cout << "strand: " << strandIndex << endl;
 
 		
 		for (unsigned int j = 0; j < numParticlesInStrand; j++) {
 			// skip the last particle and ghost particles
 			if (j == numParticlesInStrand - 1 || j % 2 == 1) continue;
-			int particleIndex1 = j;
-			Particle p1 = GetParticleInStrand(strandIndex,particleIndex1);
-			int particleIndex2 = j+2;
-			Particle p2 = GetParticleInStrand(strandIndex,particleIndex2);
+			Particle p1 = GetParticleInStrand(strandIndex1,j);
+			Particle p2 = GetParticleInStrand(strandIndex1,j+2);
+			vec3 segment1 = p2.position - p1.position;
 
 			// if we've checked i against k already, we don't wanna do k against i again
 			for (unsigned int k = i+1; k < totalNumStrands; k++) {
+				int strandIndex2 = k;
 
 				for (unsigned int l = 0; l < totalNumStrands; l++) {
 					// skip the last particle and ghost particles
 					if (l == numParticlesInStrand - 1 || l % 2 == 1) continue;
-					
+					Particle p3 = GetParticleInStrand(strandIndex2,l);
+					Particle p4 = GetParticleInStrand(strandIndex2,l+2);
+					vec3 segment2 = p4.position - p3.position;
+
+					// Ax = b
+					double A11 = segment1 * segment1;
+					double A12 = - segment1 * segment2;
+					double A21 = - segment1 * segment2;
+					double A22 = segment2 * segment2;
+
+					double b1 = segment1 * (p3.position - p1.position);
+					double b2 = - segment2 * (p3.position - p1.position);
+
+					double x1 = (b1 - A12 * b2 / A22) / (A11 - A12 * A21 / A22);
+					double x2 = (b2 - A11 * x1) / A12;
+
+					// closest point
+					vec3 cp1 = p1.position + (x1 * segment1);
+					vec3 cp2 = p3.position + (x2 * segment2);
+
+					double dist = (cp1 - cp2).Length();
+					//cout << "dist: " << dist << endl;
+
+					if (dist < collisionEpsilon && dist > contactEpsilon) {
+						// apply dat impulse
+					} else if (dist <= contactEpsilon) {
+						Stiction stiction;
+						stiction.strandIndex1 = strandIndex1;
+						stiction.segmentStartIndex1 = j;
+						stiction.strandIndex2 = strandIndex2;
+						stiction.segmentStartIndex2 = l;
+						stiction.p1 = cp1;
+						stiction.p1 = cp2;
+						HAIR_STICTIONS.push_back(stiction);
+					}
 
 				} // ----------------END FOR l-----------------------------------
 			} // ----------------END FOR k-----------------------------------
 		} // ----------------END FOR j-----------------------------------
 	} // ----------------END FOR i-----------------------------------
+
+	/* for (int i = 0; i < HAIR_STICTIONS.size(); i++) {
+		cout << "closest points: " << HAIR_STICTIONS[i].p1 << endl;
+	}*/
 }
 
 void HairMesh::ResolveHairContacts() {
