@@ -1669,7 +1669,7 @@ void HairMesh::CheckStrandCollisions() {
 				for (unsigned int l = 0; l < totalNumStrands; l++) {
 					// skip the last particle and ghost particles
 					if (l == numParticlesInStrand - 1 || l % 2 == 1) continue;
-
+					
 
 				} // ----------------END FOR l-----------------------------------
 			} // ----------------END FOR k-----------------------------------
@@ -1962,6 +1962,8 @@ HairMesh::Stiction::Stiction() {
 	segmentStartIndex1 = -1;
 	strandIndex2 = -1;
 	segmentStartIndex2 = -1;
+	p1 = vec3(0,0,0);
+	p2 = vec3(0,0,0);
 }
 
 HairMesh::Stiction::Stiction(const HairMesh::Stiction& p) {
@@ -1975,6 +1977,8 @@ HairMesh::Stiction::Stiction(const HairMesh::Stiction& p) {
 	segmentStartIndex1 = p.segmentStartIndex1;
 	strandIndex2 = p.strandIndex2;
 	segmentStartIndex2 = p.segmentStartIndex2;
+	p1 = p.p1;
+	p2 = p.p2;
 }
 
 HairMesh::Stiction& HairMesh::Stiction::operator=(const HairMesh::Stiction& p) {
@@ -1989,11 +1993,13 @@ HairMesh::Stiction& HairMesh::Stiction::operator=(const HairMesh::Stiction& p) {
 	segmentStartIndex1 = p.segmentStartIndex1;
 	strandIndex2 = p.strandIndex2;
 	segmentStartIndex2 = p.segmentStartIndex2;
+	p1 = p.p1;
+	p2 = p.p2;
     return *this;
 }
 
 HairMesh::Stiction::Stiction(IntersectionType type, int p, const vec3& normal, double d,
-	int s1, int start1, int s2, int start2) {
+	int s1, int start1, int s2, int start2, vec3 cp1, vec3 cp2) {
 	Intersection::Intersection();
 	m_p = p;
     m_normal = normal;
@@ -2005,4 +2011,6 @@ HairMesh::Stiction::Stiction(IntersectionType type, int p, const vec3& normal, d
 	segmentStartIndex1 = start1;
 	strandIndex2 = s2;
 	segmentStartIndex2 = start2;
+	p1 = cp1;
+	p2 = cp2;
 }
