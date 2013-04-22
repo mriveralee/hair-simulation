@@ -16,17 +16,17 @@ double HairMesh::COLLISION_THRESHOLD = 0.01;
 double HairMesh::jelloStartY = 1.3; //0.0
 
 //Da Hair Vars
-double HairMesh::g_bendKs = 3000.0000; //3000
-double HairMesh::g_bendKd = 5.0; // 7
+double HairMesh::g_bendKs = 13000.0000; //3000
+double HairMesh::g_bendKd = 0.70; // 7
 
-double HairMesh::g_torsionKs = 10000.0;
-double HairMesh::g_torsionKd = 0.10;
+double HairMesh::g_torsionKs = 2000.0;
+double HairMesh::g_torsionKd = 0.00;
 
-double HairMesh::g_edgeKs = 2000.0;
+double HairMesh::g_edgeKs = 5000.0;
 double HairMesh::g_edgeKd = 5.0;
 
 double HairMesh::g_stictionKs = 100.0000;
-double HairMesh::g_stictionKd = 5.0;
+double HairMesh::g_stictionKd = 50.0;
 
 
 
@@ -1320,12 +1320,12 @@ void HairMesh::InitHairMesh()
 	//Add to our strandList
 	//StrandList.addStrand(h);
 
-	int numStrands = 3;
+	int numStrands = 4;
 	double angleOffset = 360.0 / numStrands;
 	// Create a strand for each angle and add to StrandList
 	for (int i = 0; i < numStrands; i++) {
 		vec3 rootPosition(0, 2.3, 0);
-		HairStrand h = HairStrand(rootPosition, i * angleOffset);
+		HairStrand h = HairStrand(rootPosition, i * 3);
 		StrandList.addStrand(h);
 	}
 
@@ -1776,15 +1776,15 @@ void HairMesh::CheckStrandCollisions() {
 	int totalNumStrands = StrandList.size();
 	// i loops through all strands but the last, b/c we will compare second to last with last in l loop
 	for (unsigned int i = 0; i < totalNumStrands - 1; i++) {
-		HairStrand& strand = StrandList.getStrand(i);
-		int numParticlesInStrand = strand.strandParticles.size();
+		HairStrand& strand1 = StrandList.getStrand(i);
+		int numParticlesInStrand1 = strand1.strandParticles.size();
 		int strandIndex1 = i;
-		//cout << "strand: " << strandIndex << endl;
+		//cout << "strand: " << strandIndex1 << endl;
 
 		
-		for (unsigned int j = 0; j < numParticlesInStrand; j++) {
+		for (unsigned int j = 0; j < numParticlesInStrand1; j++) {
 			// skip the last particle and ghost particles
-			if (j == numParticlesInStrand - 1 || j % 2 == 1) continue;
+			if (j == numParticlesInStrand1 - 1 || j % 2 == 1) continue;
 			Particle p1 = GetParticleInStrand(strandIndex1,j);
 			Particle p2 = GetParticleInStrand(strandIndex1,j+2);
 			vec3 segment1 = p2.position - p1.position;
@@ -1792,10 +1792,12 @@ void HairMesh::CheckStrandCollisions() {
 			// if we've checked i against k already, we don't wanna do k against i again
 			for (unsigned int k = i+1; k < totalNumStrands; k++) {
 				int strandIndex2 = k;
-
-				for (unsigned int l = 0; l < totalNumStrands; l++) {
+			
+				HairStrand& strand2 = StrandList.getStrand(k);
+				int numParticlesInStrand2 = strand2.strandParticles.size();
+				for (unsigned int l = 0; l < numParticlesInStrand2; l++) {
 					// skip the last particle and ghost particles
-					if (l == numParticlesInStrand - 1 || l % 2 == 1) continue;
+					if (l == numParticlesInStrand2 - 1 || l % 2 == 1) continue;
 					Particle p3 = GetParticleInStrand(strandIndex2,l);
 					Particle p4 = GetParticleInStrand(strandIndex2,l+2);
 					vec3 segment2 = p4.position - p3.position;
@@ -1836,7 +1838,7 @@ void HairMesh::CheckStrandCollisions() {
 			} // ----------------END FOR k-----------------------------------
 		} // ----------------END FOR j-----------------------------------
 	} // ----------------END FOR i-----------------------------------
-
+	//cout << "Done" << endl;
 	/* for (int i = 0; i < HAIR_STICTIONS.size(); i++) {
 		cout << "closest points: " << HAIR_STICTIONS[i].p1 << endl;
 	}*/
@@ -2152,7 +2154,7 @@ void HairMesh::HairStrand::InitStrand(double angle)
 	for (int i = 1; i < numTotalParticles; i++) {
 		if (i % 2 == 1) {
 			float xG = position[0] - (i * particleDistOffset) * cos(2 * MATH_PI * angle / 360.0);
-			float yG = position[1] + 0.3;
+			float yG = position[1] + 0.05;
 			float zG = position[2] - (i * particleDistOffset) * sin(2 * MATH_PI * angle / 360.0);
 			strandParticles[i] = GhostParticle(i, vec3(xG,yG,zG));
 		} else {

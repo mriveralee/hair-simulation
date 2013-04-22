@@ -235,6 +235,7 @@ public:
 	bool SHOULD_DRAW_STICTION_PARTICLES;
 protected:
 	class Stiction;
+	class StictionParticle;
 
 	///HAIR Update Functions
 	void applyStrainLimiting(double dt);
@@ -280,7 +281,6 @@ protected:
     void DrawHairSprings();
 
 	// Particle List Definition
-	class StictionParticle;
 	typedef std::vector<Particle> ParticleList;
 	typedef std::vector<StictionParticle> StictionParticleList;
 	void DrawHair();
