@@ -1048,7 +1048,7 @@ void HairMesh::InitHairMesh()
 	double hOffset = 0.0;
 	// Create a strand for each angle and add to StrandList
 	for (int i = 0; i < numStrands; i++) {
-		vec3 rootPosition(hOffset, 2.8, hOffset);
+		vec3 rootPosition(hOffset, 1.4, hOffset);
 		HairStrand h = HairStrand(rootPosition, 0);
 		StrandList.addStrand(h);
 		hOffset+= 0.05;
