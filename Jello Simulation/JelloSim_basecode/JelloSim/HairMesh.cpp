@@ -16,14 +16,14 @@ double HairMesh::COLLISION_THRESHOLD = 0.01;
 double HairMesh::jelloStartY = 1.3; //0.0
 
 //Da Hair Vars
-double HairMesh::g_bendKs = 9000.0000; //3000
+double HairMesh::g_bendKs = 11000.0000; //3000
 double HairMesh::g_bendKd = 0.70; // 7
 
-double HairMesh::g_torsionKs = 2000.0;
-double HairMesh::g_torsionKd = 0.00;
+double HairMesh::g_torsionKs = 13000.0;
+double HairMesh::g_torsionKd = 0.50;
 
-double HairMesh::g_edgeKs = 5000.0;
-double HairMesh::g_edgeKd = 5.0;
+double HairMesh::g_edgeKs = 7000.0;
+double HairMesh::g_edgeKd = 0.50;
 
 double HairMesh::g_stictionKs = 100.0000;
 double HairMesh::g_stictionKd = 50.0;
@@ -32,6 +32,16 @@ double HairMesh::g_stictionKd = 50.0;
 
 double HairMesh::g_attachmentKs = 0.000;
 double HairMesh::g_attachmentKd = 0.000;
+
+void HairMesh::moveHairStrandUp(int strandNum) {
+	HairStrand& strand = StrandList.getStrand(strandNum);
+	ParticleList& strandParticles = strand.strandParticles;
+	for (unsigned int i = 0; i < strandParticles.size(); i++) {
+		Particle& pt = strandParticles[i];
+		pt.position[0] += 0.01;
+	}
+}
+
 
 HairMesh::HairMesh() :     
     m_integrationType(HairMesh::RK4), m_drawflags(MESH | SHOULD_DRAW_HAIR),
@@ -2004,7 +2014,7 @@ void HairMesh::applyImpulse() {
 		p2.velocity = p2.velocity + impulse.a * (impulse.m_distance / p2.mass) * n;
 		p3.velocity = p3.velocity - (1 - impulse.b) * (impulse.m_distance / p3.mass) * n;
 		p4.velocity = p4.velocity - impulse.b * (impulse.m_distance / p4.mass) * n;
-
+		
     }
 }
 

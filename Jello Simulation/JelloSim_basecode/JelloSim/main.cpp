@@ -20,7 +20,7 @@ Camera theCamera;
 //World theWorld("worlds/myCylinder2.xml");			//Test Cylinder lying on floor
 //World theWorld("worlds/sphere.xml");				//Sphere testing
 //World theWorld("worlds/cylinderBottom.xml");		//Test for top Cap - Cylinder facing vertically
-World theWorld("worlds/sphereHead.xml");			//Large sphere head
+World theWorld = World("worlds/sphereHead.xml");			//Large sphere head
 
 mmc::FpsTracker theFpsTracker;
 
@@ -162,10 +162,45 @@ void onKeyboardCb(unsigned char key, int x, int y)
    else if (key == '5') mask = theHair.TORSION;
    else if (key == '6') mask = theHair.BEND;
    else if (key == '7') mask = theHair.STICTION;
-   else if (key =='q') theHair.SHOULD_DRAW_HAIR_PARTICLES = !theHair.SHOULD_DRAW_HAIR_PARTICLES;
-   else if (key =='w') theHair.SHOULD_DRAW_GHOST_PARTICLES = !theHair.SHOULD_DRAW_GHOST_PARTICLES;
-   else if (key =='e') theHair.SHOULD_DRAW_STICTION_PARTICLES = !theHair.SHOULD_DRAW_STICTION_PARTICLES;
-   
+   else if (key == 'q') theHair.SHOULD_DRAW_HAIR_PARTICLES = !theHair.SHOULD_DRAW_HAIR_PARTICLES;
+   else if (key == 'w') theHair.SHOULD_DRAW_GHOST_PARTICLES = !theHair.SHOULD_DRAW_GHOST_PARTICLES;
+   else if (key == 'e') theHair.SHOULD_DRAW_STICTION_PARTICLES = !theHair.SHOULD_DRAW_STICTION_PARTICLES;
+   //Move Left
+   else if (key == 'a') {
+		//theHair.moveHairStrandUp(0);
+		World::Shape* shape = theWorld.m_shapes[1];
+		shape->move(-0.01, 0.0);
+   } else if (key == 's') {
+	     //Move Up
+		//theHair.moveHairStrandUp(0);
+		World::Shape* shape = theWorld.m_shapes[1];
+		shape->move(0.0, 0.01);
+   } else if (key == 'x') {
+	     //Move Up
+		//theHair.moveHairStrandUp(0);
+		World::Shape* shape = theWorld.m_shapes[1];
+		shape->move(0.0, -0.01);
+	} else if (key == 'd') {
+		//Move Right
+		//theHair.moveHairStrandUp(0);
+		World::Shape* shape = theWorld.m_shapes[1];
+		shape->move(0.01, 0.0);
+   } else if (key == 'z') {
+		//Rotate Right
+		//theHair.moveHairStrandUp(0);
+	   std::vector<World::Shape*>& shapes = theWorld.m_shapes;
+		World::Shape* shape = theWorld.m_shapes[1];
+		shape->rotate(1.0);
+   } else if (key == 'c') {
+		//Rotate Right
+		//theHair.moveHairStrandUp(0);
+		World::Shape* shape = theWorld.m_shapes[1];
+		shape->rotate(-1.0);
+   }
+   World::Shape* shape = theWorld.m_shapes[1];
+	cout << shape->pos <<endl;
+				   std::vector<World::Shape*>& shapes = theWorld.m_shapes;	
+
    if (mask)
    {
        if (theHair.GetDrawFlags() & mask)

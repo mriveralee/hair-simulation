@@ -232,6 +232,7 @@ public:
 	bool SHOULD_DRAW_HAIR_PARTICLES;
 	bool SHOULD_DRAW_GHOST_PARTICLES;
 	bool SHOULD_DRAW_STICTION_PARTICLES;
+	void moveHairStrandUp(int strandNum);
 protected:
 	class Impulse;
 	class Stiction;
