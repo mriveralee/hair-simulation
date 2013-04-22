@@ -143,7 +143,7 @@ void onMouseCb(int button, int state, int x, int y)
 void onKeyboardCb(unsigned char key, int x, int y)
 {
    unsigned int mask = 0x0;
-
+ 
    if (key == ' ') theCamera.reset();
    else if (key == 27) exit(0); // ESC Key
    //else if (key == '8') theHair.SetIntegrationType(HairMesh::EULER);
@@ -152,12 +152,10 @@ void onKeyboardCb(unsigned char key, int x, int y)
    else if (key == '>') isRunning = true;
    else if (key == '=') isRunning = false;
    else if (key == '<') {
+
 	   theHair.Reset();
-
+	   delete theWorld.m_shapes[1];
 	   theWorld.m_shapes[1] = new World::Shape(theWorldCopy.m_shapes[1]);
-	   
-	   
-
    }
    else if (key == 'r') isRecording = !isRecording; if (isRecording) theFrameNum = 0;
    else if (key == '1') theHair.SHOULD_DRAW_HAIR = !(theHair.SHOULD_DRAW_HAIR);
@@ -179,6 +177,7 @@ void onKeyboardCb(unsigned char key, int x, int y)
 		theHair.moveHairStrandTranslate(0, -0.01, 0.00);
    } else if (key == 's') {
 	     //Move Up
+	   grabScreen();
 		World::Shape* shape = theWorld.m_shapes[1];
 		shape->move(0.0, 0.01);
 		theHair.moveHairStrandTranslate(0, 0.0, 0.01);
@@ -191,6 +190,7 @@ void onKeyboardCb(unsigned char key, int x, int y)
 	} else if (key == 'd') {
 		//Move Right
 		//theHair.moveHairStrandUp(0);
+		  grabScreen();
 		World::Shape* shape = theWorld.m_shapes[1];
 		shape->move(0.01, 0.0);
 		theHair.moveHairStrandTranslate(0, 0.01, 0.0);
@@ -208,6 +208,7 @@ void onKeyboardCb(unsigned char key, int x, int y)
 		shape->rotate(-1.0);
 		theHair.moveHairStrandRotate(0, -1);
    }
+
    //World::Shape* shape = theWorld.m_shapes[1];
 	//cout << shape->pos <<endl;
 	//std::vector<World::Shape*>& shapes = theWorld.m_shapes;	

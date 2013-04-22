@@ -1046,13 +1046,14 @@ void HairMesh::InitHairMesh()
 	int numStrands = 8;
 	double angleOffset = 360.0 / numStrands;
 	double hOffset = -0.15;
-	double vOffset = 0.0;
+	double vOffset = 0.00;
 	// Create a strand for each angle and add to StrandList
 	for (int i = 0; i < numStrands; i++) {
-		vec3 rootPosition(hOffset, 1.4, hOffset);
+		vec3 rootPosition(vOffset, 1.4, hOffset);
 		HairStrand h = HairStrand(rootPosition, 0);
 		StrandList.addStrand(h);
 		hOffset+= 0.05;
+		vOffset += 0.02;
 	}
 
 	//For each hair strand make the springs
@@ -1716,7 +1717,7 @@ void HairMesh::applyStiction() {
 
 
 		//Now add a Stiction Spring
-		AddStictionSpring(stiction.strandIndex1, p1.index, stiction.strandIndex2, p2.index);
+		//AddStictionSpring(stiction.strandIndex1, p1.index, stiction.strandIndex2, p2.index);
 
 	}
 }
@@ -1913,7 +1914,7 @@ void HairMesh::HairStrand::InitStrand(double angle)
 	strandParticles = ParticleList();
     // Init particles
 	float strandLength = 1.5f;
-	int numHairParticles = 32;
+	int numHairParticles = 18;
 	int numGhostParticles = numHairParticles - 1;
 	int numTotalParticles = numHairParticles + numGhostParticles;
 	float particleDistOffset = strandLength / numTotalParticles;
@@ -1930,7 +1931,7 @@ void HairMesh::HairStrand::InitStrand(double angle)
 	for (int i = 1; i < numTotalParticles; i++) {
 		if (i % 2 == 1) {
 			float xG = position[0] - (i * particleDistOffset) * cos(2 * MATH_PI * angle / 360.0);
-			float yG = position[1] + 0.05;
+			float yG = position[1] + 0.1;
 			float zG = position[2] - (i * particleDistOffset) * sin(2 * MATH_PI * angle / 360.0);
 			strandParticles[i] = GhostParticle(i, vec3(xG,yG,zG));
 		} else {
