@@ -19,10 +19,13 @@ public:
     class Shape
     {
     public:
-        vec3 pos;    
+        vec3 pos; 
+		double angle;
         ShapeType GetType() const { return type; }
+		void move(double hor, double vert);
+		void rotate(double ang);
     protected:
-        Shape(ShapeType t) : type(t), pos(0,0,0) {}
+        Shape(ShapeType t) : type(t), pos(0,0,0), angle(0.0) {}
         ShapeType type;
     };
 
