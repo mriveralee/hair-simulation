@@ -21,11 +21,11 @@ double HairMesh::COLLISION_THRESHOLD = 0.01;
 double HairMesh::jelloStartY = 1.3; //0.0
 
 //Da Hair Vars
-double HairMesh::g_bendKs = 11000.0000; //3000
+double HairMesh::g_bendKs = 2000.0000; //3000
 double HairMesh::g_bendKd = 0.70; // 7
 
-double HairMesh::g_torsionKs = 13000.0;
-double HairMesh::g_torsionKd = 0.50;
+double HairMesh::g_torsionKs = 00.0;
+double HairMesh::g_torsionKd = 0.00;
 
 double HairMesh::g_edgeKs = 7000.0;
 double HairMesh::g_edgeKd = 0.50;
@@ -46,6 +46,7 @@ void HairMesh::moveHairStrandRotate(int strandNum, double angle) {
 		double rads = angle*(MATH_PI/180);
 		RotationMatrix<double> a = RotationMatrix<double>(1, rads);
 		pt.position = a*pt.position;
+		break;
 			//matrix rot = matrix();
 
 		//pt.position[1] += 0.01;
@@ -347,29 +348,20 @@ void HairMesh::Draw(const vec3& eyePos)
 void HairMesh::Update(double dt, const World& world, const vec3& externalForces)
 {
     m_externalForces = externalForces;
-
+	ComputeHairForces(StrandList, dt);
+	applyStrainLimiting(dt);		
 	CheckParticleCollisions(world);
 	CheckStrandCollisions();
+
+
 	applyStiction();
 	applyImpulse();
-	ComputeHairForces(StrandList, dt);
-	//updateVelocity(dt);
-	//applyStrainLimiting(dt);			// v_n+dt/2
-	applySelfRepulsions(dt);			// v_n+dt/2
-	//updatePosition(dt);				// x_n+1 = x_n + (dt/2)
-	resolveBodyCollisions(dt);			// modify  x_n+1 and v_n
-	resolveSelfCollisions(dt);			// modify  x_n+1 and v_n
-	//updateVelocity(dt);					// v_n+1/2 = v_n + dt/2a(tn+1/2, x_n, v_n+1/2)
-	extrapolateVelocity(dt);			// v_n+1 = 2v_n+1/2 - v_n
-	applySelfRepulsions(dt);			// Modify v_n+1 Use n+1
-	
-//	CheckForCollisions(m_vparticles, world);
-//ComputeHairForces(StrandList, dt);
+	// v_n+dt/2
 	ResolveHairContacts();
 	ResolveHairCollisions();
-//	ResolveContacts(m_vparticles);
-//	ResolveCollisions(m_vparticles);
 	RK4Integrate(dt);
+	applyStrainLimiting(dt);	
+	ComputeHairForces(StrandList, dt);
 }
 
 void HairMesh::CheckForCollisions(ParticleGrid& grid, const World& world)
@@ -383,75 +375,14 @@ void HairMesh::ComputeForces(ParticleGrid& grid)
 //Object particle is below the surface of another object
 void HairMesh::ResolveContacts(ParticleGrid& grid)
 {
-	//CONTACTS - Penetration of the other object
-	for (unsigned int i = 0; i < m_vcontacts.size(); i++)
-    {		
-		//Con
-		const Intersection& result = m_vcontacts[i];
-		Particle& p = GetParticle(grid, result.m_p);
-		double D = result.m_distance;	
-        vec3 N = result.m_normal;
-		vec3 unitN = N.Normalize();
-
-		//Apply impulse to velocity (directly reflect it across the normal) IF out velocity is moving downwards
-		vec3 V = p.velocity;
-		double VNorm = p.velocity*unitN;
-		//vec3 VTan = V-VNorm*unitN;
-		//Check if velocity ismoving downwards
-		//if(VNorm < 0.0) {
-			//Now reflect the velocity with a restituion (damping on velocity)
-			double kR = 0.5;
-			p.velocity = kR*(p.velocity-(2*unitN*(unitN*V)));
-			//p.velocity *= -1;
-			//Move point to the surface of the object it is currently in
-			vec3 distanceAdjust = D*unitN;
-			p.position = p.position+distanceAdjust;
-			
-			double kFriction = result.m_ground_friction;
-			if (kFriction > 0.0) {
-				//Kinectic Friction Force
-				//cout<<"Kinectic Friction";
-				p.force -= D*N/friction_Mk;
-			}
-
-		//}
-
-    }
+	//Not Used
 }
 
 
 //Object is within a threshold about the surface of another object
 void HairMesh::ResolveCollisions(ParticleGrid& grid)
 {
-    //COLLISION - Close to Hitting other object
-	for(unsigned int i = 0; i < m_vcollisions.size(); i++)
-    {
-		//Collision Details
-        const Intersection result = m_vcollisions[i];
-        Particle& p = GetParticle(grid, result.m_p);
-		double D = result.m_distance;	
-        vec3 N = result.m_normal;
-		vec3 unitN = N.Normalize();
-		
-		//Get Particle's Velocity in direction of surface Normal Direction
-		vec3 V = p.velocity;
-		double VProj = V*unitN;						
-		vec3 VNorm = (V*unitN)*unitN;				
-		
-		// If Velocity is moving into the collision threshold (towards the surface), apply the force
-		if (VProj <= 0.0) {
-			//Apply force that is relative to the distance  from the collision threshold
-			vec3 Fpenalty = -1*((g_penaltyKs*(D-0) + g_penaltyKd*(V*(unitN)))*unitN);
-			p.force += Fpenalty;
-
-			double kFriction = result.m_ground_friction;
-			if (kFriction > 0.0) {
-				//Kinectic Friction Force
-				//cout<<"Kinectic Friction";
-				p.force -= D*N/friction_Mk;
-			}
-		}
-	}
+   //Not Used
 }
 
 bool HairMesh::FloorIntersection(Particle& p, int strandIndex, int particleIndex, Intersection& intersection)
@@ -571,18 +502,6 @@ bool HairMesh::CylinderIntersection(Particle& pt, World::Cylinder* cylinder,
 	//	cout<<"Not within top";
 		return false;
 	}
-	
-	//if (0.0 <= cLength && cLength <= cylinderRadius) {
-	//	//cout<<"within cylinder radius\n";
-	//	//cout<<pt.position;
-	//	
-	//}
-	//if ( 0.0 < projB.Length() && projB.Length() <= cylinderHeight) {
-	//	//cout<<"Within cylinder height";
-	//	//cout<< "projBL: "<<projB.Length()<<" cylinderHeight: " << cylinderHeight;
-	//}
-
-
 
 	//Bottom case - is angleProjB < 0 && |projB| < Collision Threshold
 	if (dotProjB < 0.0 ) {
@@ -620,7 +539,7 @@ bool HairMesh::CylinderIntersection(Particle& pt, World::Cylinder* cylinder,
 		}
 	}
 	 
-			//In Cylinder Collision Case
+	//In Cylinder Collision Case
 	if ( 0.0 <= projB.Length() && projB.Length() <= cylinderHeight) {
 		//cout<<"In CYL \n";
 		if (cylinderRadius < cLength && cLength < cylinderRadius+COLLISION_THRESHOLD) {
@@ -654,63 +573,12 @@ bool HairMesh::CylinderIntersection(Particle& pt, World::Cylinder* cylinder,
 
 void HairMesh::EulerIntegrate(double dt)
 {
-	ParticleGrid& source = m_vparticles; // source is a ptr!
-	for (int i = 0; i < m_rows+1; i++)
-	{
-		for (int j = 0; j < m_cols+1; j++)
-		{
-			for (int k = 0; k < m_stacks+1; k++)
-			{
-				//Update Particle position & velocity
-				Particle& s = GetParticle(source, i,j,k);
-				//p1 = p0 + t(v0) 
-				s.position = s.position + dt*s.velocity;
-				//v1 = v0 + t(F/m)
-				s.velocity = s.velocity + (dt*s.force)*(1/s.mass);
-			}
-		}
-	}
+	//Not Used
 }
 
 void HairMesh::MidPointIntegrate(double dt)
 {
-    double halfdt = 0.5 * dt;
-	ParticleGrid target = m_vparticles; // target is a copy!
-	ParticleGrid& source = m_vparticles; // source is a ptr!
-
-	// Step 1 - take half-step move
-	for (int i = 0; i < m_rows+1; i++)
-	{
-		for (int j = 0; j < m_cols+1; j++)
-		{
-			for (int k = 0; k < m_stacks+1; k++)
-			{
-				//Evaluate single Euler Step and stop back into target
-				Particle& s = GetParticle(source, i,j,k);
-				Particle& t = GetParticle(target, i,j,k);
-				// Evaluate half-euler step for velocity and position
-				t.velocity = s.velocity + (halfdt*s.force)*1/s.mass;
-				t.position = s.position + halfdt * s.velocity;
-			}
-		}
-	}
-
-	ComputeForces(target);
-
-	// Step 2 Now evaluate midpoint and take full step using the midpoint derivatives
-	for (int i = 0; i < m_rows+1; i++)
-	{
-		for (int j = 0; j < m_cols+1; j++)
-		{
-			for (int k = 0; k < m_stacks+1; k++)
-			{
-				Particle& s = GetParticle(source, i,j,k);
-				Particle& t = GetParticle(target, i,j,k);
-				s.velocity = s.velocity + (dt*t.force)*(1/s.mass);
-				s.position = s.position + (dt*t.velocity);
-			}
-		}
-	}
+   //Not Used
 }
 
 void HairMesh::RK4Integrate(double dt)
@@ -852,13 +720,17 @@ void HairMesh::RK4Integrate(double dt)
 				Particle& k3 = accum3[j];
 				Particle& k4 = accum4[j];
 
+			if (j >0) {
 				p.velocity = p.velocity + dt*(asixth * k1.force +
 					athird * k2.force + athird * k3.force + asixth * k4.force)*1/p.mass;
-				if (j >0) {
+
 				p.position = p.position + dt*(asixth * k1.velocity +
 				athird * k2.velocity + athird * k3.velocity + asixth * k4.velocity);
 		
-				}
+			}
+			else { 
+				p.velocity = vec3(0,0,0);
+			}
 		}
 
 		//Put all the stictin together
@@ -869,16 +741,20 @@ void HairMesh::RK4Integrate(double dt)
 				StictionParticle& k3 = st_accum3[j];
 				StictionParticle& k4 = st_accum4[j];
 
-				p.velocity = p.velocity + dt*(asixth * k1.force +
-					athird * k2.force + athird * k3.force + asixth * k4.force)*1/p.mass;
-				if (j >0){
-				p.position = p.position + dt*(asixth * k1.velocity +
-				athird * k2.velocity + athird * k3.velocity + asixth * k4.velocity);
+				if (j >0) {
+					p.velocity = p.velocity + dt*(asixth * k1.force +
+						athird * k2.force + athird * k3.force + asixth * k4.force)*1/p.mass;
+	
+					p.position = p.position + dt*(asixth * k1.velocity +
+					athird * k2.velocity + athird * k3.velocity + asixth * k4.velocity);
 		
+				} else { 
+					p.velocity = vec3(0,0,0);
 				}
+			}
+
 		}
 	}
-}
 
 
 
@@ -1006,82 +882,12 @@ HairMesh::Intersection::Intersection(IntersectionType type, int p, const vec3& n
 
 void HairMesh::FaceMesh::Draw(const HairMesh& m)
 {
-    const ParticleGrid& g = m.m_vparticles;
-    for (unsigned int strip = 0; strip < m_strips.size(); strip++)
-    {
-        const std::vector<int>& points = m_strips[strip];
-
-        glBegin(GL_TRIANGLE_STRIP);
-        for (unsigned int pi = 0; pi < points.size(); pi++)
-        {
-            int idx = points[pi];
-            vec3 p = m.GetParticle(g, idx).position;
-
-            vec3 n(0,0,0);
-            const std::vector<int>& neighbors = m_neighbors[idx];
-            if (neighbors.size() > 0)
-            {
-                vec3 pup = m.GetParticle(g, neighbors[0]).position;
-                vec3 pdown = m.GetParticle(g, neighbors[1]).position;
-                vec3 pleft = m.GetParticle(g, neighbors[2]).position;
-                vec3 pright = m.GetParticle(g, neighbors[3]).position;
-
-                vec3 n1 = -((pright - p) ^ (pup - p));
-                vec3 n2 = -((pdown - p) ^ (pright - p));
-                vec3 n3 = -((pleft - p) ^ (pdown - p));
-                vec3 n4 = -((pup - p) ^ (pleft - p));
-
-                n = n1 + n2 + n3 + n4;
-                n = n.Normalize();
-            }
-
-            glNormal3f(n[0], n[1], n[2]);
-            glVertex3f(p[0], p[1], p[2]);
-        }
-        glEnd();
-    }
+	//Not Used
 }
 
 void HairMesh::FaceMesh::DrawNormals(const HairMesh& m)
 {
-    glDisable(GL_LIGHTING);
-
-    glBegin(GL_LINES);
-    glColor3f(0.0, 1.0, 0.0);
-
-    const ParticleGrid& g = m.m_vparticles;
-    for (unsigned int strip = 0; strip < m_strips.size(); strip++)
-    {
-        const std::vector<int>& points = m_strips[strip];
-        for (unsigned int pi = 0; pi < points.size(); pi++)
-        {
-            int idx = points[pi];
-            vec3 p = m.GetParticle(g, idx).position;
-
-            const std::vector<int>& neighbors = m_neighbors[idx];
-            if (neighbors.size() == 0) continue;
-
-            vec3 pup = m.GetParticle(g, neighbors[0]).position;
-            vec3 pdown = m.GetParticle(g, neighbors[1]).position;
-            vec3 pleft = m.GetParticle(g, neighbors[2]).position;
-            vec3 pright = m.GetParticle(g, neighbors[3]).position;
-
-            vec3 n1 = -((pright - p) ^ (pup - p));
-            vec3 n2 = -((pdown - p) ^ (pright - p));
-            vec3 n3 = -((pleft - p) ^ (pdown - p));
-            vec3 n4 = -((pup - p) ^ (pleft - p));
-
-            vec3 n = n1 + n2 + n3 + n4;
-            n = n.Normalize();
-
-            vec3 end = p + 0.2 * n;
-            glVertex3f(p[0], p[1], p[2]);
-            glVertex3f(end[0], end[1], end[2]);
-        }
-    }
-
-    glEnd();
-    glEnable(GL_LIGHTING);
+	//Not Used
 }
 
 #define R(i) max(0, min(i, m.m_rows)) // CLAMP row index
@@ -1089,124 +895,7 @@ void HairMesh::FaceMesh::DrawNormals(const HairMesh& m)
 #define D(j) max(0, min(j, m.m_stacks)) // CLAMP stack index
 HairMesh::FaceMesh::FaceMesh(const HairMesh& m, HairMesh::Face f)
 {
-    const ParticleGrid& g = m.m_vparticles;
-    switch(f)
-    {
-    case ZFRONT:
-        m_strips.resize(m.m_rows);
-        for (int i = 0; i < m.m_rows+1; i++)
-            for (int j = 0; j < m.m_cols+1; j++)
-            {
-                if (i < m.m_rows)
-                {
-                    m_strips[i].push_back(m.GetIndex(i+1,j,0));
-                    m_strips[i].push_back(m.GetIndex(i,j,0));
-                }
-
-                std::vector<int> neighbors;
-                neighbors.push_back(m.GetIndex(R(i), C(j+1), D(0)));
-                neighbors.push_back(m.GetIndex(R(i), C(j-1), D(0)));
-                neighbors.push_back(m.GetIndex(R(i-1), C(j), D(0)));
-                neighbors.push_back(m.GetIndex(R(i+1), C(j), D(0)));
-                m_neighbors[m.GetIndex(i,j,0)] = neighbors;
-            }
-        break;
-    case ZBACK:
-        m_strips.resize(m.m_rows);
-        for (int i = 0; i < m.m_rows+1; i++)
-            for (int j = 0; j < m.m_cols+1; j++)
-            {
-                if (i < m.m_rows)
-                {
-                    m_strips[i].push_back(m.GetIndex(i+1,j,m.m_stacks));
-                    m_strips[i].push_back(m.GetIndex(i,j,m.m_stacks));
-                }
-
-                std::vector<int> neighbors;
-                neighbors.push_back(m.GetIndex(R(i+1), C(j), D(m.m_stacks)));
-                neighbors.push_back(m.GetIndex(R(i-1), C(j), D(m.m_stacks)));
-                neighbors.push_back(m.GetIndex(R(i), C(j-1), D(m.m_stacks)));
-                neighbors.push_back(m.GetIndex(R(i), C(j+1), D(m.m_stacks)));
-                m_neighbors[m.GetIndex(i,j,m.m_stacks)] = neighbors;
-            }
-        break;
-    case XLEFT:
-        m_strips.resize(m.m_cols);
-        for (int j = 0; j < m.m_cols+1; j++)
-            for (int k = 0; k < m.m_stacks+1; k++)
-            {
-                if (j < m.m_cols)
-                {
-                    m_strips[j].push_back(m.GetIndex(0,j+1,k));
-                    m_strips[j].push_back(m.GetIndex(0,j,k));
-                }
-
-                std::vector<int> neighbors;
-                neighbors.push_back(m.GetIndex(R(0), C(j), D(k+1)));
-                neighbors.push_back(m.GetIndex(R(0), C(j), D(k-1)));
-                neighbors.push_back(m.GetIndex(R(0), C(j-1), D(k)));
-                neighbors.push_back(m.GetIndex(R(0), C(j+1), D(k)));
-                m_neighbors[m.GetIndex(0,j,k)] = neighbors;
-            }
-        break;
-    case XRIGHT:
-        m_strips.resize(m.m_cols);
-        for (int j = 0; j < m.m_cols+1; j++)
-            for (int k = 0; k < m.m_stacks+1; k++)
-            {
-                if (j < m.m_cols)
-                {
-                    m_strips[j].push_back(m.GetIndex(m.m_rows,j+1,k));
-                    m_strips[j].push_back(m.GetIndex(m.m_rows,j,k));
-                }
-
-                std::vector<int> neighbors;
-                neighbors.push_back(m.GetIndex(R(m.m_rows), C(j+1), D(k)));
-                neighbors.push_back(m.GetIndex(R(m.m_rows), C(j-1), D(k)));
-                neighbors.push_back(m.GetIndex(R(m.m_rows), C(j), D(k-1)));
-                neighbors.push_back(m.GetIndex(R(m.m_rows), C(j), D(k+1)));
-                m_neighbors[m.GetIndex(m.m_rows,j,k)] = neighbors;
-            }
-        break;
-    case YBOTTOM:
-        m_strips.resize(m.m_rows);
-        for (int i = 0; i < m.m_rows+1; i++)
-            for (int k = 0; k < m.m_stacks+1; k++)
-            {
-                if (i < m.m_rows)
-                {
-                    m_strips[i].push_back(m.GetIndex(i+1,0,k));
-                    m_strips[i].push_back(m.GetIndex(i,0,k));
-                }
-
-                std::vector<int> neighbors;
-                neighbors.push_back(m.GetIndex(R(i+1), C(0), D(k)));
-                neighbors.push_back(m.GetIndex(R(i-1), C(0), D(k)));
-                neighbors.push_back(m.GetIndex(R(i), C(0), D(k-1)));
-                neighbors.push_back(m.GetIndex(R(i), C(0), D(k+1)));
-                m_neighbors[m.GetIndex(i,0,k)] = neighbors;
-            }
-        break;
-    case YTOP:
-        m_strips.resize(m.m_rows);
-        for (int i = 0; i < m.m_rows+1; i++)
-            for (int k = 0; k< m.m_stacks+1; k++)
-            {
-                if (i < m.m_rows)
-                {
-                    m_strips[i].push_back(m.GetIndex(i+1,m.m_cols,k));
-                    m_strips[i].push_back(m.GetIndex(i,m.m_cols,k));
-                }
-
-                std::vector<int> neighbors;
-                neighbors.push_back(m.GetIndex(R(i), C(m.m_cols), D(k+1)));
-                neighbors.push_back(m.GetIndex(R(i), C(m.m_cols), D(k-1)));
-                neighbors.push_back(m.GetIndex(R(i-1), C(m.m_cols), D(k)));
-                neighbors.push_back(m.GetIndex(R(i+1), C(m.m_cols), D(k)));
-                m_neighbors[m.GetIndex(i,m.m_cols,k)] = neighbors;
-            }
-        break;
-    }
+	//Not Used
 }
 
 void HairMesh::FaceMesh::CalcDistToEye(const HairMesh& m, const vec3& eyePos)
@@ -1344,12 +1033,13 @@ void HairMesh::InitHairMesh()
 
 	int numStrands = 4;
 	double angleOffset = 360.0 / numStrands;
-
+	double hOffset = 0.0;
 	// Create a strand for each angle and add to StrandList
 	for (int i = 0; i < numStrands; i++) {
-		vec3 rootPosition(0, 2.8, 0);
-		HairStrand h = HairStrand(rootPosition, i * 3);
+		vec3 rootPosition(hOffset, 2.8, hOffset);
+		HairStrand h = HairStrand(rootPosition, 0);
 		StrandList.addStrand(h);
+		hOffset+= 0.1;
 	}
 
 	//For each hair strand make the springs
@@ -1374,7 +1064,7 @@ void HairMesh::InitHairMesh()
 			int p1 = pNum+2;
 
 			//Add the Edge Springs
-			AddEdgeSpring(sNum, p0, sNum, pG); //first to ghost
+			AddEdgeSpring(sNum, p0, sNum, pG);   //first to ghost
 			AddEdgeSpring(sNum, pG, sNum, p1);   //ghost to second
 			AddEdgeSpring(sNum, p0, sNum, p1);   //first to second
 		}
@@ -1615,13 +1305,14 @@ void HairMesh::applyStrainLimiting(double dt) {
 	unsigned int edgeSpringCount = 0;
 	// for each spring in the list of springs
 	for (unsigned int i = 0; i < HAIR_SPRINGS.size(); i++) {
-		edgeSpringCount++;
 		// get a spring from this list
 		Spring& spring = HAIR_SPRINGS[i];
 		// skip if not edge. if edge and not the third 
 		if (spring.m_type != EDGE) continue;
-		else if (edgeSpringCount < 3) continue;
-		else if (edgeSpringCount == 3) edgeSpringCount = 0;
+		//Type is edge so increment
+		edgeSpringCount++;
+		if (edgeSpringCount < 3) continue;
+		else edgeSpringCount = 0;
 
 		// for each good edge spring, get the start and end particles
 		Particle& rootParticle = GetParticleInStrand(spring.m_s1,0);
@@ -1637,12 +1328,16 @@ void HairMesh::applyStrainLimiting(double dt) {
 		else direction = startParticle.position - endParticle.position;
 		double currentLength = direction.Length();
 
+		//normalize the direction
+		direction = direction.Normalize();
+
 		// if the spring exceeds 10% deformity
 		if (currentLength > spring.m_restLen * 1.10) {
-			double distToMoveUp = currentLength - spring.m_restLen;
+			double distToMoveUp = fabs(currentLength - spring.m_restLen);
 			//cout << "dist1 and dist2: " << dist1 << " " << dist2 << endl;
 			if (dist1 > dist2)
 				startParticle.position = startParticle.position + (direction * distToMoveUp);
+			
 			else
 				endParticle.position = endParticle.position + (direction * distToMoveUp);
 		}
@@ -1652,55 +1347,25 @@ void HairMesh::applyStrainLimiting(double dt) {
 }
 
 void HairMesh::applySelfRepulsions(double dt) {
-
+	//Do Nothing
 }
 
 void HairMesh::updatePosition(double dt) {
-	//for (unsigned int i = 0; i < StrandList.size(); i++) {
-	//	//Current Strand
-	//	HairStrand& strand = StrandList.getStrand(i);
-	//	//Strand Particles
-	//	ParticleList& particles = strand.strandParticles;
-	//	//Loop through and apple forces
-	//	for (unsigned int j = 0; j < particles.size(); j++) {
-	//		if (j == 0) continue; //RootParticle
-	//		Particle& p = particles[j];
-	//		p.position += (dt)*p.velocity;
-	//	}
-	//}
-
+	//DoNothing
 }
 
 void HairMesh::resolveBodyCollisions(double dt) {
-
+	//Do Nothing
 }
 
 void HairMesh::resolveSelfCollisions(double dt) {
-
+	//Do Nothing
 }
 void HairMesh::updateVelocity(double dt) {
-	//for (unsigned int i = 0; i < StrandList.size(); i++) {
-	//	//Current Strand
-	//	HairStrand& strand = StrandList.getStrand(i);
-	//	//Strand Particles
-	//	ParticleList& particles = strand.strandParticles;
-	//	//Loop through and apple forces
-	//	for (unsigned int j = 0; j < particles.size(); j++) {
-	//		Particle& p = particles[j];
-	//		p.velocity += (dt/2)*p.mass*p.force; // TODO what actually belongs from the paper
-	//		//cout<< p.velocity << endl;
-	//	}
-	//}
-
 }
 
 void HairMesh::extrapolateVelocity(double dt) { 
-
 }
-
-
-
-
 
 //Add Gravity and that good stuff to the particles
 void HairMesh::ComputeHairForces(HairStrandList& strands, double dt) {
@@ -2038,7 +1703,7 @@ void HairMesh::applyStiction() {
 
 
 		//Now add a Stiction Spring
-		AddStictionSpring(stiction.strandIndex1, p1.index, stiction.strandIndex2, p2.index);
+		//AddStictionSpring(stiction.strandIndex1, p1.index, stiction.strandIndex2, p2.index);
 
 	}
 }
@@ -2246,9 +1911,7 @@ void HairMesh::HairStrand::InitStrand(double angle)
 	float x = position[0]; // root position instance variable
 	float y = position[1]; // starting height of strand for now
 	float z = position[2];
-	strandParticles[0] = Particle(0, vec3(x,y,z));
-
-
+	strandParticles[0] = Particle(0, position);
 
 	// GHOST PARTICLES HAVE ODD INDICES, HAIR PARTICLES HAVE EVEN
 	for (int i = 1; i < numTotalParticles; i++) {
@@ -2266,12 +1929,6 @@ void HairMesh::HairStrand::InitStrand(double angle)
 
 	}
 
-    // Setup structural springs
-    ParticleList& list = strandParticles;
-	for (int i = 0; i < numTotalParticles; i++) {
-		// TODO: ADD SPRINGS (see InitHairMesh)
-		//cout << list[i].position << endl;
-    }
 }
 
 //---------------------------------------------------------------------

@@ -146,8 +146,8 @@ void onKeyboardCb(unsigned char key, int x, int y)
 
    if (key == ' ') theCamera.reset();
    else if (key == 27) exit(0); // ESC Key
-   else if (key == '8') theHair.SetIntegrationType(HairMesh::EULER);
-   else if (key == '9') theHair.SetIntegrationType(HairMesh::MIDPOINT);
+   //else if (key == '8') theHair.SetIntegrationType(HairMesh::EULER);
+   //else if (key == '9') theHair.SetIntegrationType(HairMesh::MIDPOINT);
    else if (key == '0') theHair.SetIntegrationType(HairMesh::RK4);
    else if (key == '>') isRunning = true;
    else if (key == '=') isRunning = false;
