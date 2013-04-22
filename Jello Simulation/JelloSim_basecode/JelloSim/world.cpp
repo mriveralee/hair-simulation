@@ -230,6 +230,13 @@ World::World(const std::string& filename)
     LoadFromFile(filename);
 }
 
+World::World(const World& w) {
+	m_shapes = std::vector<Shape*>();
+	for (int i = 0; i < w.m_shapes.size(); i++) {
+		m_shapes.push_back(w.m_shapes[i]);
+	}
+}
+
 World::~World() 
 {
     for (unsigned int i = 0; i < m_shapes.size(); i++)

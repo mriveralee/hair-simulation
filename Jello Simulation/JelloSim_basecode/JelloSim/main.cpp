@@ -21,7 +21,7 @@ Camera theCamera;
 //World theWorld("worlds/sphere.xml");				//Sphere testing
 //World theWorld("worlds/cylinderBottom.xml");		//Test for top Cap - Cylinder facing vertically
 World theWorld = World("worlds/sphereHead.xml");			//Large sphere head
-
+World theWorldCopy = World("worlds/sphereHead.xml");
 mmc::FpsTracker theFpsTracker;
 
 // UI Helpers
@@ -151,7 +151,14 @@ void onKeyboardCb(unsigned char key, int x, int y)
    else if (key == '0') theHair.SetIntegrationType(HairMesh::RK4);
    else if (key == '>') isRunning = true;
    else if (key == '=') isRunning = false;
-   else if (key == '<') theHair.Reset();
+   else if (key == '<') {
+	   theHair.Reset();
+
+	   theWorld.m_shapes[1] = new World::Shape(theWorldCopy.m_shapes[1]);
+	   
+	   
+
+   }
    else if (key == 'r') isRecording = !isRecording; if (isRecording) theFrameNum = 0;
    else if (key == '1') theHair.SHOULD_DRAW_HAIR = !(theHair.SHOULD_DRAW_HAIR);
    else if (key == '2') mask = theHair.FORCES;
@@ -167,24 +174,26 @@ void onKeyboardCb(unsigned char key, int x, int y)
    else if (key == 'e') theHair.SHOULD_DRAW_STICTION_PARTICLES = !theHair.SHOULD_DRAW_STICTION_PARTICLES;
    //Move Left
    else if (key == 'a') {
-		//theHair.moveHairStrandUp(0);
 		World::Shape* shape = theWorld.m_shapes[1];
 		shape->move(-0.01, 0.0);
+		theHair.moveHairStrandTranslate(0, -0.01, 0.00);
    } else if (key == 's') {
 	     //Move Up
-		//theHair.moveHairStrandUp(0);
 		World::Shape* shape = theWorld.m_shapes[1];
 		shape->move(0.0, 0.01);
+		theHair.moveHairStrandTranslate(0, 0.0, 0.01);
    } else if (key == 'x') {
 	     //Move Up
 		//theHair.moveHairStrandUp(0);
 		World::Shape* shape = theWorld.m_shapes[1];
 		shape->move(0.0, -0.01);
+		theHair.moveHairStrandTranslate(0, 0.0, -0.01);
 	} else if (key == 'd') {
 		//Move Right
 		//theHair.moveHairStrandUp(0);
 		World::Shape* shape = theWorld.m_shapes[1];
 		shape->move(0.01, 0.0);
+		theHair.moveHairStrandTranslate(0, 0.01, 0.0);
    } else if (key == 'z') {
 		//Rotate Right
 		//theHair.moveHairStrandUp(0);

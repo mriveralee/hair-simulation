@@ -39,17 +39,32 @@ double HairMesh::g_attachmentKs = 0.000;
 double HairMesh::g_attachmentKd = 0.000;
 
 void HairMesh::moveHairStrandRotate(int strandNum, double angle) {
-	HairStrand& strand = StrandList.getStrand(strandNum);
-	ParticleList& strandParticles = strand.strandParticles;
-	for (unsigned int i = 0; i < strandParticles.size(); i++) {
-		Particle& pt = strandParticles[i];
-		double rads = angle*(MATH_PI/180);
-		RotationMatrix<double> a = RotationMatrix<double>(1, rads);
-		pt.position = a*pt.position;
-		break;
-			//matrix rot = matrix();
+	for (unsigned int sNum =0; sNum < StrandList.size(); sNum++) {
+		HairStrand& strand = StrandList.getStrand(sNum);
+		ParticleList& strandParticles = strand.strandParticles;
+		for (unsigned int i = 0; i < strandParticles.size(); i++) {
+			//Only move the root particle
+			Particle& pt = strandParticles[i];
+			double rads = angle*(MATH_PI/180);
+			RotationMatrix<double> a = RotationMatrix<double>(1, rads);
+			pt.position = a*pt.position;
+			break;
+		}
+	}
+}
 
-		//pt.position[1] += 0.01;
+void HairMesh::moveHairStrandTranslate(int strandNum, double hor, double vert) {
+	for (unsigned int sNum =0; sNum < StrandList.size(); sNum++) {
+		HairStrand& strand = StrandList.getStrand(sNum);
+		ParticleList& strandParticles = strand.strandParticles;
+		for (unsigned int i = 0; i < strandParticles.size(); i++) {
+			Particle& pt = strandParticles[i];
+			//double rads = angle*(MATH_PI/180);
+			//RotationMatrix<double> a = RotationMatrix<double>(1, rads);
+			pt.position[0] += hor;
+			pt.position[1] += vert;
+			break;
+		}
 	}
 }
 
@@ -352,11 +367,8 @@ void HairMesh::Update(double dt, const World& world, const vec3& externalForces)
 	applyStrainLimiting(dt);		
 	CheckParticleCollisions(world);
 	CheckStrandCollisions();
-
-
 	applyStiction();
 	applyImpulse();
-	// v_n+dt/2
 	ResolveHairContacts();
 	ResolveHairCollisions();
 	RK4Integrate(dt);
@@ -1031,7 +1043,7 @@ void HairMesh::InitHairMesh()
 	//Add to our strandList
 	//StrandList.addStrand(h);
 
-	int numStrands = 4;
+	int numStrands = 8;
 	double angleOffset = 360.0 / numStrands;
 	double hOffset = 0.0;
 	// Create a strand for each angle and add to StrandList
@@ -1039,7 +1051,7 @@ void HairMesh::InitHairMesh()
 		vec3 rootPosition(hOffset, 2.8, hOffset);
 		HairStrand h = HairStrand(rootPosition, 0);
 		StrandList.addStrand(h);
-		hOffset+= 0.1;
+		hOffset+= 0.05;
 	}
 
 	//For each hair strand make the springs
@@ -1703,7 +1715,7 @@ void HairMesh::applyStiction() {
 
 
 		//Now add a Stiction Spring
-		//AddStictionSpring(stiction.strandIndex1, p1.index, stiction.strandIndex2, p2.index);
+		AddStictionSpring(stiction.strandIndex1, p1.index, stiction.strandIndex2, p2.index);
 
 	}
 }
