@@ -16,7 +16,7 @@ double HairMesh::COLLISION_THRESHOLD = 0.01;
 double HairMesh::jelloStartY = 1.3; //0.0
 
 //Da Hair Vars
-double HairMesh::g_bendKs = 13000.0000; //3000
+double HairMesh::g_bendKs = 9000.0000; //3000
 double HairMesh::g_bendKd = 0.70; // 7
 
 double HairMesh::g_torsionKs = 2000.0;
@@ -332,7 +332,7 @@ void HairMesh::Update(double dt, const World& world, const vec3& externalForces)
 	CheckStrandCollisions();
 	applyStiction();
 	applyImpulse();
-	//ComputeHairForces(StrandList, dt);
+	ComputeHairForces(StrandList, dt);
 	//updateVelocity(dt);
 	applyStrainLimiting(dt);			// v_n+dt/2
 	applySelfRepulsions(dt);			// v_n+dt/2
