@@ -1337,7 +1337,7 @@ void HairMesh::InitHairMesh()
 
 	// Create a strand for each angle and add to StrandList
 	for (int i = 0; i < numStrands; i++) {
-		vec3 rootPosition(0, 2.3, 0);
+		vec3 rootPosition(0, 2.8, 0);
 		HairStrand h = HairStrand(rootPosition, i * 3);
 		StrandList.addStrand(h);
 	}
@@ -1623,14 +1623,15 @@ void HairMesh::applyStrainLimiting(double dt) {
 
 		vec3 direction = vec3(0.0,0.0,0.0);
 		// if start is farther than end
-		if (dist1 < dist2) direction = endParticle.position - startParticle.position;
+		if (dist1 > dist2) direction = endParticle.position - startParticle.position;
 		else direction = startParticle.position - endParticle.position;
 		double currentLength = direction.Length();
 
 		// if the spring exceeds 10% deformity
 		if (currentLength > spring.m_restLen * 1.10) {
 			double distToMoveUp = currentLength - spring.m_restLen;
-			if (dist1 < dist2)
+			//cout << "dist1 and dist2: " << dist1 << " " << dist2 << endl;
+			if (dist1 > dist2)
 				startParticle.position = startParticle.position + (direction * distToMoveUp);
 			else
 				endParticle.position = endParticle.position + (direction * distToMoveUp);
