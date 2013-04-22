@@ -199,9 +199,9 @@ void onKeyboardCb(unsigned char key, int x, int y)
 		shape->rotate(-1.0);
 		theHair.moveHairStrandRotate(0, -1);
    }
-   //World::Shape* shape = theWorld.m_shapes[1];
-	//cout << shape->pos <<endl;
-	//std::vector<World::Shape*>& shapes = theWorld.m_shapes;	
+   World::Shape* shape = theWorld.m_shapes[1];
+	/cout << shape->pos <<endl;
+				   std::vector<World::Shape*>& shapes = theWorld.m_shapes;	
 
    if (mask)
    {

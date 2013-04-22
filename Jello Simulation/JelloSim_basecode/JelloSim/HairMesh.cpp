@@ -1,6 +1,11 @@
 #include "HairMesh.h"
 #include <GL/glut.h>
 #include <algorithm>
+#include "matrix.h"
+
+double MATH_PI = M_PI;
+
+using namespace math;
 
 
 double HairMesh::g_structuralKs = 5000.000; //3k 
@@ -33,12 +38,17 @@ double HairMesh::g_stictionKd = 50.0;
 double HairMesh::g_attachmentKs = 0.000;
 double HairMesh::g_attachmentKd = 0.000;
 
-void HairMesh::moveHairStrandUp(int strandNum) {
+void HairMesh::moveHairStrandRotate(int strandNum, double angle) {
 	HairStrand& strand = StrandList.getStrand(strandNum);
 	ParticleList& strandParticles = strand.strandParticles;
 	for (unsigned int i = 0; i < strandParticles.size(); i++) {
 		Particle& pt = strandParticles[i];
-		pt.position[0] += 0.01;
+		double rads = angle*(MATH_PI/180);
+		RotationMatrix<double> a = RotationMatrix<double>(1, rads);
+		pt.position = a*pt.position;
+			//matrix rot = matrix();
+
+		//pt.position[1] += 0.01;
 	}
 }
 
@@ -2200,7 +2210,7 @@ void HairMesh::HairStrand::InitStrand(double angle)
 	float z = position[2];
 	strandParticles[0] = Particle(0, vec3(x,y,z));
 
-	double MATH_PI = 3.14;
+
 
 	// GHOST PARTICLES HAVE ODD INDICES, HAIR PARTICLES HAVE EVEN
 	for (int i = 1; i < numTotalParticles; i++) {
