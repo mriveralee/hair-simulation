@@ -354,7 +354,7 @@ void HairMesh::Update(double dt, const World& world, const vec3& externalForces)
 	applyImpulse();
 	ComputeHairForces(StrandList, dt);
 	//updateVelocity(dt);
-	applyStrainLimiting(dt);			// v_n+dt/2
+	//applyStrainLimiting(dt);			// v_n+dt/2
 	applySelfRepulsions(dt);			// v_n+dt/2
 	//updatePosition(dt);				// x_n+1 = x_n + (dt/2)
 	resolveBodyCollisions(dt);			// modify  x_n+1 and v_n
@@ -1347,7 +1347,7 @@ void HairMesh::InitHairMesh()
 
 	// Create a strand for each angle and add to StrandList
 	for (int i = 0; i < numStrands; i++) {
-		vec3 rootPosition(0, 2.3, 0);
+		vec3 rootPosition(0, 2.8, 0);
 		HairStrand h = HairStrand(rootPosition, i * 3);
 		StrandList.addStrand(h);
 	}
@@ -1610,6 +1610,44 @@ void HairMesh::DrawHairParticles() {
 //------------------------Time Integration for Hair ------------------
 //--------------------------------------------------------------------
 void HairMesh::applyStrainLimiting(double dt) {
+
+	// we want the 3rd edge spring each time, where endpoints are real hair particles
+	unsigned int edgeSpringCount = 0;
+	// for each spring in the list of springs
+	for (unsigned int i = 0; i < HAIR_SPRINGS.size(); i++) {
+		edgeSpringCount++;
+		// get a spring from this list
+		Spring& spring = HAIR_SPRINGS[i];
+		// skip if not edge. if edge and not the third 
+		if (spring.m_type != EDGE) continue;
+		else if (edgeSpringCount < 3) continue;
+		else if (edgeSpringCount == 3) edgeSpringCount = 0;
+
+		// for each good edge spring, get the start and end particles
+		Particle& rootParticle = GetParticleInStrand(spring.m_s1,0);
+		Particle& startParticle = GetParticleInStrand(spring.m_s1,spring.m_p1);
+		Particle& endParticle = GetParticleInStrand(spring.m_s2,spring.m_p2);
+
+		double dist1 = (rootParticle.position - startParticle.position).Length();
+		double dist2 = (rootParticle.position - endParticle.position).Length();
+
+		vec3 direction = vec3(0.0,0.0,0.0);
+		// if start is farther than end
+		if (dist1 > dist2) direction = endParticle.position - startParticle.position;
+		else direction = startParticle.position - endParticle.position;
+		double currentLength = direction.Length();
+
+		// if the spring exceeds 10% deformity
+		if (currentLength > spring.m_restLen * 1.10) {
+			double distToMoveUp = currentLength - spring.m_restLen;
+			//cout << "dist1 and dist2: " << dist1 << " " << dist2 << endl;
+			if (dist1 > dist2)
+				startParticle.position = startParticle.position + (direction * distToMoveUp);
+			else
+				endParticle.position = endParticle.position + (direction * distToMoveUp);
+		}
+	}
+
 
 }
 
