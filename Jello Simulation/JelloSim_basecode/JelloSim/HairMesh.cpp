@@ -331,6 +331,7 @@ void HairMesh::Update(double dt, const World& world, const vec3& externalForces)
 	CheckParticleCollisions(world);
 	CheckStrandCollisions();
 	applyStiction();
+	applyImpulse();
 	//ComputeHairForces(StrandList, dt);
 	//updateVelocity(dt);
 	applyStrainLimiting(dt);			// v_n+dt/2
@@ -1308,6 +1309,7 @@ void HairMesh::InitHairMesh()
 	HAIR_CONTACTS.clear();
 	HAIR_COLLISIONS.clear();
 	HAIR_STICTIONS.clear();
+	HAIR_IMPULSES.clear();
 
 	//##########################################################
 	//#################### HAIR INITIALIZATION #################
@@ -1322,6 +1324,7 @@ void HairMesh::InitHairMesh()
 
 	int numStrands = 4;
 	double angleOffset = 360.0 / numStrands;
+
 	// Create a strand for each angle and add to StrandList
 	for (int i = 0; i < numStrands; i++) {
 		vec3 rootPosition(0, 2.3, 0);
@@ -1769,6 +1772,7 @@ void HairMesh::CheckParticleCollisions(const World& world) {
 
 void HairMesh::CheckStrandCollisions() {
 	HAIR_STICTIONS.clear();
+	HAIR_IMPULSES.clear();
 
 	double collisionEpsilon = 0.002; //0.06
 	double contactEpsilon = 0.0000;
@@ -1822,7 +1826,22 @@ void HairMesh::CheckStrandCollisions() {
 					//cout << "dist: " << dist << endl;
 
 					if (dist < collisionEpsilon && dist > contactEpsilon) {
-						// apply dat impulse
+						// apply dat impulse (adjusted impulse)
+						Impulse impulse;
+						impulse.strandIndex1 = strandIndex1;
+						impulse.segmentStartIndex1 = j;
+						impulse.strandIndex2 = strandIndex2;
+						impulse.segmentStartIndex2 = l;
+						impulse.p1 = cp1;
+						impulse.p2 = cp2;
+						impulse.a = x1;
+						impulse.b = x2;
+						// calculate adjusted impulse; dist is my impulse magnitude?
+						dist = dist / 2.0;
+						double adjustedImpulse = (2 * dist) / (x1*x1 + (1-x1*x1) + x2*x2 + (1-x2*x2));
+						impulse.m_distance = adjustedImpulse;
+						HAIR_IMPULSES.push_back(impulse);
+
 					} else if (dist <= contactEpsilon) {
 						Stiction stiction;
 						stiction.strandIndex1 = strandIndex1;
@@ -1962,9 +1981,31 @@ void HairMesh::applyStiction() {
 
 		//Now add a Stiction Spring
 		AddStictionSpring(stiction.strandIndex1, p1.index, stiction.strandIndex2, p2.index);
-	
 
 	}
+}
+
+void HairMesh::applyImpulse() {
+
+	for (unsigned int i = 0; i < HAIR_IMPULSES.size(); i++) {
+		//Current stiction
+		Impulse impulse = HAIR_IMPULSES[i];
+
+		//Get the 2 particles from first segment
+		Particle& p1 = GetParticleInStrand(impulse.strandIndex1,impulse.segmentStartIndex1);
+		Particle& p2 = GetParticleInStrand(impulse.strandIndex1,impulse.segmentStartIndex1+1);
+
+		//Get the 2 particles from second segment
+		Particle& p3 = GetParticleInStrand(impulse.strandIndex2,impulse.segmentStartIndex2);
+		Particle& p4 = GetParticleInStrand(impulse.strandIndex2,impulse.segmentStartIndex2+1);
+
+		vec3 n = impulse.p2 - impulse.p1;
+		p1.velocity = p1.velocity + (1 - impulse.a) * (impulse.m_distance / p1.mass) * n;
+		p2.velocity = p2.velocity + impulse.a * (impulse.m_distance / p2.mass) * n;
+		p3.velocity = p3.velocity - (1 - impulse.b) * (impulse.m_distance / p3.mass) * n;
+		p4.velocity = p4.velocity - impulse.b * (impulse.m_distance / p4.mass) * n;
+
+    }
 }
 
 //---------------------------------------------------------------------
@@ -2150,6 +2191,7 @@ void HairMesh::HairStrand::InitStrand(double angle)
 	strandParticles[0] = Particle(0, vec3(x,y,z));
 
 	double MATH_PI = 3.14;
+
 	// GHOST PARTICLES HAVE ODD INDICES, HAIR PARTICLES HAVE EVEN
 	for (int i = 1; i < numTotalParticles; i++) {
 		if (i % 2 == 1) {
@@ -2240,4 +2282,80 @@ HairMesh::Stiction::Stiction(IntersectionType type, int p, const vec3& normal, d
 	segmentStartIndex2 = start2;
 	p1 = cp1;
 	p2 = cp2;
+}
+
+//---------------------------------------------------------------------
+//---------------------------- Impulse --------------------------------
+//---------------------------------------------------------------------
+
+HairMesh::Impulse::Impulse() {
+	m_p = -1;
+	m_normal = vec3(0,0,0);
+	m_distance = 0;
+	m_type = CONTACT;
+	m_ground_friction = 0.0;
+	m_strand = -1;
+	strandIndex1 = -1;
+	segmentStartIndex1 = -1;
+	strandIndex2 = -1;
+	segmentStartIndex2 = -1;
+	p1 = vec3(0,0,0);
+	p2 = vec3(0,0,0);
+	a = -1;
+	b = -1;
+}
+
+HairMesh::Impulse::Impulse(const HairMesh::Impulse& p) {
+	m_p = p.m_p;
+	m_normal = p.m_normal;
+	m_distance = p.m_distance;
+	m_type = p.m_type;
+	m_ground_friction = p.m_ground_friction;
+	m_strand = -1;
+	strandIndex1 = p.strandIndex1;
+	segmentStartIndex1 = p.segmentStartIndex1;
+	strandIndex2 = p.strandIndex2;
+	segmentStartIndex2 = p.segmentStartIndex2;
+	p1 = p.p1;
+	p2 = p.p2;
+	a = p.a;
+	b = p.b;
+}
+
+HairMesh::Impulse& HairMesh::Impulse::operator=(const HairMesh::Impulse& p) {
+    if (&p == this) return *this;
+    m_p = p.m_p;
+    m_normal = p.m_normal;
+    m_distance = p.m_distance;
+    m_type = p.m_type;
+	m_ground_friction = p.m_ground_friction;
+	m_strand = -1;
+	strandIndex1 = p.strandIndex1;
+	segmentStartIndex1 = p.segmentStartIndex1;
+	strandIndex2 = p.strandIndex2;
+	segmentStartIndex2 = p.segmentStartIndex2;
+	p1 = p.p1;
+	p2 = p.p2;
+	a = p.a;
+	b = p.b;
+    return *this;
+}
+
+HairMesh::Impulse::Impulse(IntersectionType type, int p, const vec3& normal, double d,
+	int s1, int start1, int s2, int start2, vec3 cp1, vec3 cp2, double aVal, double bVal) {
+	Intersection::Intersection();
+	m_p = p;
+    m_normal = normal;
+    m_distance = d;
+    m_type = type;
+	m_ground_friction = 0.0;
+	m_strand = -1;
+	strandIndex1 = s1;
+	segmentStartIndex1 = start1;
+	strandIndex2 = s2;
+	segmentStartIndex2 = start2;
+	p1 = cp1;
+	p2 = cp2;
+	a = aVal;
+	b = bVal;
 }

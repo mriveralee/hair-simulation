@@ -162,7 +162,6 @@ public:
     static const unsigned int FORCES = 0x1000;
 
 protected:
-
     class Particle
     {
     public:
@@ -234,6 +233,7 @@ public:
 	bool SHOULD_DRAW_GHOST_PARTICLES;
 	bool SHOULD_DRAW_STICTION_PARTICLES;
 protected:
+	class Impulse;
 	class Stiction;
 	class StictionParticle;
 
@@ -252,8 +252,7 @@ protected:
 	void ResolveHairCollisions();
 
 	void applyStiction();
-
-	
+	void applyImpulse();
 
 	//HAIR SPRINGS 
 	static double g_torsionKs;
@@ -272,6 +271,7 @@ protected:
 	std::vector<Intersection> HAIR_CONTACTS;
     std::vector<Intersection> HAIR_COLLISIONS;
 	std::vector<Stiction> HAIR_STICTIONS;
+	std::vector<Impulse> HAIR_IMPULSES;
 	
 	virtual void AddTorsionSpring(int s1, int p1, int s2, int p2);
 	virtual void AddEdgeSpring(int s1, int p1, int s2, int p2);
@@ -393,12 +393,26 @@ protected:
 		vec3 p2;
 	};
 
+	class Impulse : public Intersection {
+	public:
+		Impulse();
+		Impulse(const Impulse& p);
+		Impulse& operator=(const Impulse& p);
+		Impulse(IntersectionType type, int p, const vec3& normal, double d, int s1, int start1, int s2, int start2, vec3 cp1, vec3 cp2, double aVal, double bVal);
+
+		int strandIndex1;
+		int segmentStartIndex1;
+		int strandIndex2;
+		int segmentStartIndex2;
+		vec3 p1;
+		vec3 p2;
+		double a;
+		double b;
+	};
+
 	//Get particle by strand and particle index
 	Particle& GetParticleInStrand(int sNum, int pNum);
 	StictionParticle& GetStictionParticleInStrand(int sNum, int pNum);
-
-
-	
 
 };
 
